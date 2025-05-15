@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 265 71% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 162 70% 46%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 0 69% 70%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+
+  /* Custom colors based on design */
+  --dark: 0 0% 7%;
+  --dark-100: 0 0% 12%;
+  --dark-200: 0 0% 18%;
+  --dark-300: 0 0% 23%;
+  --dark-400: 0 0% 31%;
+  --dark-500: 0 0% 50%;
+  --success: 122 40% 50%;
+  --warning: 45 100% 51%;
+  --error: 0 75% 58%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 265 71% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 162 70% 46%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 0 69% 70%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-inter antialiased bg-dark text-white;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-poppins;
+  }
+}
+
+/* Custom animations */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-wave {
+  animation: wave 4s ease-in-out infinite;
+}
+
+/* Custom font classes */
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom color classes based on design */
+.bg-primary {
+  background-color: #5D3FD3;
+}
+
+.bg-primary-light {
+  background-color: #7B61E3;
+}
+
+.bg-primary-dark {
+  background-color: #4C32A8;
+}
+
+.text-primary {
+  color: #5D3FD3;
+}
+
+.bg-secondary {
+  background-color: #20C997;
+}
+
+.bg-secondary-light {
+  background-color: #3DD9AA;
+}
+
+.bg-secondary-dark {
+  background-color: #18A97F;
+}
+
+.text-secondary {
+  color: #20C997;
+}
+
+.bg-accent {
+  background-color: #FF6B6B;
+}
+
+.bg-accent-light {
+  background-color: #FF8A8A;
+}
+
+.bg-accent-dark {
+  background-color: #E55A5A;
+}
+
+.text-accent {
+  color: #FF6B6B;
+}
+
+.bg-dark {
+  background-color: #121212;
+}
+
+.bg-dark-100 {
+  background-color: #1E1E1E;
+}
+
+.bg-dark-200 {
+  background-color: #2D2D2D;
+}
+
+.bg-dark-300 {
+  background-color: #3A3A3A;
+}
+
+.bg-dark-400 {
+  background-color: #505050;
+}
+
+.bg-dark-500 {
+  background-color: #808080;
+}
+
+.text-dark-500 {
+  color: #808080;
+}
+
+.bg-success {
+  background-color: #4CAF50;
+}
+
+.bg-warning {
+  background-color: #FFC107;
+}
+
+.bg-error {
+  background-color: #F44336;
+}
