@@ -1,0 +1,55 @@
+How to Organize Your Vocal Earth App into Five Files
+
+⸻
+
+1. index.html
+	•	This is the main HTML file that structures your web page.
+	•	It includes the basic layout, buttons (like “Start”, “End Session”), and placeholders for the canvas and text output.
+	•	It will link to your CSS and JavaScript files.
+
+⸻
+
+2. style.css
+	•	Contains all the styles for your app: colors, fonts, layout, responsiveness.
+	•	Keeps your visual design clean and separate from your HTML and JS logic.
+
+⸻
+
+3. visuals.js
+	•	Contains all the p5.js code that draws the dynamic landscape.
+	•	Uses sentiment scores from the narration to change visuals (e.g., colors, shapes, effects).
+	•	Responsible for creating the surreal world based on the emotion of the words.
+
+⸻
+
+4. speech.js
+	•	Handles speech recognition with the Web Speech API.
+	•	Captures live narration and sends the text for sentiment analysis.
+	•	Manages starting, stopping speech recognition, and storing the narration.
+	•	Triggers updates to visuals.js with new sentiment data.
+
+⸻
+
+5. backend.js (Node.js server)
+	•	Runs on your backend (Node.js environment).
+	•	Acts as a proxy to securely send narration text to the DeepSeek API and return poetic summaries.
+	•	Keeps your API key hidden and safe on the server side.
+	•	Exposes an API endpoint like /api/summarize for the frontend to call.
+
+⸻
+
+How These Files Work Together
+	•	index.html loads the page, including CSS and JS files.
+	•	User speaks; speech.js captures and processes the words.
+	•	Sentiment analysis happens inside speech.js or as a separate module if you want.
+	•	visuals.js listens to sentiment changes and updates the landscape in real time.
+	•	When narration ends, frontend sends the text to your backend server in backend.js.
+	•	Backend calls DeepSeek API and sends back the poetic summary, which frontend displays on the page.
+
+⸻
+
+Benefits of This Structure
+	•	Clear separation of concerns — each file does one main thing.
+	•	Easier to develop, debug, and maintain.
+	•	Cleaner code and better collaboration if you work with others.
+	•	Scales well if you want to add more features later (music, user profiles, etc.).

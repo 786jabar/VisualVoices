@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vocal Earth - Generate Worlds from Words</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Vocal Earth</h1>
+    <p>Speak your world into existence.</p>
+  </header>
+
+  <main>
+    <button id="start-btn">Start Speaking</button>
+    <button id="stop-btn" disabled>End Session</button>
+
+    <div id="landscape-container">
+      <!-- p5.js canvas will go here -->
+    </div>
+
+    <section id="summary-section">
+      <h2>Poetic Summary</h2>
+      <pre id="summary-text">Your poetic summary will appear here.</pre>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5/lib/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sentiment@5.0.2/build/sentiment.min.js"></script>
+  <script src="speech.js"></script>
+  <script src="visuals.js"></script>
+</body>
+</html>
