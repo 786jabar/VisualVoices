@@ -49,20 +49,64 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
       // Start audio context
       await Tone.start();
       
-      // Create instruments
-      const newSynth = new Tone.PolySynth(Tone.Synth);
-      const newNoiseSynth = new Tone.NoiseSynth();
+      // Create instruments with better sound quality settings
+      const newSynth = new Tone.PolySynth(Tone.Synth, {
+        envelope: {
+          attack: 0.1,
+          decay: 0.3,
+          sustain: 0.4,
+          release: 1.2,
+        },
+        oscillator: {
+          type: "sine"  // Use sine wave for cleaner sound
+        }
+      });
       
-      // Create effects
-      const newReverb = new Tone.Reverb(4);
-      const newDelay = new Tone.FeedbackDelay(0.5, 0.4);
-      const newFilter = new Tone.Filter(1000, "lowpass");
-      const newAutoFilter = new Tone.AutoFilter(0.1).start();
+      // Create noise synth with optimized settings to reduce distortion
+      const newNoiseSynth = new Tone.NoiseSynth({
+        noise: {
+          type: "pink",  // Pink noise sounds more natural
+          playbackRate: 0.5  // Slower playback rate for smoother sound
+        },
+        envelope: {
+          attack: 0.2,
+          decay: 0.3,
+          sustain: 0.2,
+          release: 0.8
+        }
+      });
+      
+      // Create effects with better audio quality settings
+      const newReverb = new Tone.Reverb({
+        decay: 2.5,  // Reduced from 4 to minimize muddiness
+        wet: 0.3     // Lower wet level to reduce audio distortion
+      });
+      
+      const newDelay = new Tone.FeedbackDelay({
+        delayTime: 0.5,
+        feedback: 0.2,  // Reduced from 0.4 to prevent audio buildup
+        wet: 0.25       // Lower wet level for clarity
+      });
+      
+      const newFilter = new Tone.Filter({
+        frequency: 1500,  // Increased from 1000 for more clarity
+        type: "lowpass",
+        Q: 0.5  // Lower Q factor for smoother filtering
+      });
+      
+      const newAutoFilter = new Tone.AutoFilter({
+        frequency: 0.1,
+        depth: 0.4,  // Reduced depth for less extreme modulation
+        wet: 0.3     // Lower wet mix for subtle effect
+      }).start();
+      
+      // Master volume control with limiter to prevent distortion
+      const newLimiter = new Tone.Limiter(-3); // Add limiter to prevent clipping
       const newVolume = new Tone.Volume(options.volume);
       
-      // Connect instruments to effects chain
-      newSynth.chain(newFilter, newReverb, newDelay, newVolume, Tone.Destination);
-      newNoiseSynth.chain(newAutoFilter, newReverb, newVolume, Tone.Destination);
+      // Connect instruments to effects chain with improved signal flow
+      newSynth.chain(newFilter, newDelay, newReverb, newLimiter, newVolume, Tone.Destination);
+      newNoiseSynth.chain(newAutoFilter, newFilter, newReverb, newLimiter, newVolume, Tone.Destination);
       
       // Set state
       setSynth(newSynth);

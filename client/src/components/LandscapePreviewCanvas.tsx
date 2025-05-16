@@ -29,9 +29,33 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
   const canvasRef = useRef<HTMLDivElement>(null);
   const p5InstanceRef = useRef<p5 | null>(null);
 
+  // Cleanup p5 instance when component unmounts
+  useEffect(() => {
+    return () => {
+      if (p5InstanceRef.current) {
+        try {
+          p5InstanceRef.current.remove();
+          p5InstanceRef.current = null;
+        } catch (err) {
+          console.error("Error removing p5 instance:", err);
+        }
+      }
+    };
+  }, []);
+  
   useEffect(() => {
     // Only create new instance if none exists and container is ready
-    if (!canvasRef.current || p5InstanceRef.current) return;
+    if (!canvasRef.current) return;
+    
+    // If a p5 instance already exists, remove it before creating a new one
+    if (p5InstanceRef.current) {
+      try {
+        p5InstanceRef.current.remove();
+        p5InstanceRef.current = null;
+      } catch (err) {
+        console.error("Error removing existing p5 instance:", err);
+      }
+    }
 
     // Safely extract colors with fallbacks
     const safeColors = {
@@ -206,18 +230,26 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         if (!isActive) return;
         
         try {
+          // Set lower framerate for better performance
+          p.frameRate(20);
+          
           // Clear background with gradient
           drawBackground();
+          
+          // Performance optimization: Only update terrain periodically
+          const shouldUpdateTerrain = p.frameCount % 3 === 0;
           
           // Draw 3D terrain
           drawTerrain();
           
-          // Update and draw atmospheric particles
-          updateParticles();
+          // Update particles less frequently to improve performance
+          if (p.frameCount % 2 === 0) {
+            updateParticles();
+          }
           
-          // Move through terrain if in flow mode
-          if (isFlowing) {
-            flying -= 0.015;
+          // Move through terrain if in flow mode, but at reduced rate
+          if (isFlowing && shouldUpdateTerrain) {
+            flying -= 0.008; // Reduced from 0.015 for smoother animation
             try {
               refreshTerrain();
             } catch (err) {
