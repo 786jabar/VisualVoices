@@ -56,6 +56,7 @@ interface ControlPanelProps {
   poeticSummary: string | null;
   isProcessingSummary: boolean;
   onSaveImage: () => void;
+  onShareImage?: () => void; // Added share image handler
   isAudioEnabled: boolean;
   onToggleAudio: () => void;
   colorIntensity: boolean;
@@ -73,6 +74,7 @@ const ControlPanel: FC<ControlPanelProps> = ({
   poeticSummary,
   isProcessingSummary,
   onSaveImage,
+  onShareImage,
   isAudioEnabled,
   onToggleAudio,
   colorIntensity,
@@ -203,7 +205,11 @@ const ControlPanel: FC<ControlPanelProps> = ({
   
   // Handle share functionality
   const handleShare = () => {
-    if (navigator.share) {
+    if (onShareImage) {
+      // Use the provided share function from parent component
+      onShareImage();
+    } else if (typeof navigator.share === 'function') {
+      // Fallback to native share API if available
       navigator.share({
         title: 'My Vocal Earth Creation',
         text: poeticSummary || 'Check out the surreal landscape I created with my voice on Vocal Earth!',
@@ -217,8 +223,7 @@ const ControlPanel: FC<ControlPanelProps> = ({
     } else {
       toast({
         title: 'Share Unavailable',
-        description: 'Sharing is not supported in your browser.',
-        variant: 'destructive'
+        description: 'Advanced sharing options will be available soon!',
       });
     }
   };

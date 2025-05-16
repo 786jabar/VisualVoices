@@ -147,6 +147,10 @@ export default function Home() {
         throw new Error('Canvas not found');
       }
       
+      // Get data URL from canvas for sharing
+      const dataUrl = canvas.toDataURL('image/png');
+      setShareImageUrl(dataUrl);
+      
       downloadCanvasAsImage(canvas);
       
       toast({
@@ -157,6 +161,29 @@ export default function Home() {
       toast({
         title: 'Error',
         description: 'Failed to save image',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Handle share visualization
+  const handleShare = () => {
+    try {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) {
+        throw new Error('Canvas not found');
+      }
+      
+      // Get data URL from canvas for sharing
+      const dataUrl = canvas.toDataURL('image/png');
+      setShareImageUrl(dataUrl);
+      
+      // Open share modal
+      setIsShareModalOpen(true);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to prepare visualization for sharing',
         variant: 'destructive'
       });
     }
