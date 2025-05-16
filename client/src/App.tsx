@@ -9,6 +9,7 @@ import Gallery from "@/pages/Gallery";
 import GalleryItem from "@/pages/GalleryItem";
 import LandingPage from "@/pages/LandingPage";
 import Explore from "@/pages/Explore";
+import Landscapes from "@/pages/Landscapes";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/gallery" component={Gallery} />
       <Route path="/gallery/:id" component={GalleryItem} />
       <Route path="/explore" component={Explore} />
+      <Route path="/landscapes" component={Landscapes} />
       <Route component={NotFound} />
     </Switch>
   );

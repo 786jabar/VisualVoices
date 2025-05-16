@@ -41,7 +41,7 @@ const LandingPage: FC = () => {
               </Button>
             </Link>
             
-            <Link href="/explore">
+            <Link href="/landscapes">
               <Button className="h-14 px-8 text-base bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2">
                 <Globe className="h-5 w-5" />
                 Browse Landscapes
