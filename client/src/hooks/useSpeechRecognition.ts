@@ -22,8 +22,21 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
   useEffect(() => {
     // Check if browser supports SpeechRecognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    // Detect browser for better user guidance
+    const isFirefox = typeof window !== 'undefined' && 
+      navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    const isSafari = typeof window !== 'undefined' && 
+      /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
     if (!SpeechRecognition) {
-      setError('Your browser does not support speech recognition.');
+      if (isFirefox) {
+        setError('Firefox requires enabling speech recognition in about:config. Search for media.webspeech.recognition.enable and set it to true.');
+      } else if (isSafari) {
+        setError('Safari has limited speech recognition support. For best results, use Chrome or Edge.');
+      } else {
+        setError('Your browser does not support speech recognition. Please try Chrome, Edge, or Safari.');
+      }
     } else {
       setBrowserSupportsSpeechRecognition(true);
     }
@@ -42,7 +55,10 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
 
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      
+      // Get language from localStorage if available, default to English
+      const storedLanguage = localStorage.getItem('preferredLanguage') || 'en-US';
+      recognition.lang = storedLanguage;
 
       recognition.onstart = () => {
         setIsListening(true);

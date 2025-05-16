@@ -13,6 +13,7 @@ import {
   FileUp,
   Share2
 } from 'lucide-react';
+import LandscapePreviewCanvas from '@/components/LandscapePreviewCanvas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -250,9 +251,23 @@ const Landscapes: React.FC = () => {
   // Change soundscape when preview changes
   useEffect(() => {
     if (previewLandscape && isPreviewActive) {
-      changeSoundscape(previewLandscape.soundscape);
+      // Cleanup any existing audio
+      if (isSoundscapePlaying) {
+        toggleSoundscape();
+      }
+      
+      // Change the soundscape type and start playing after a short delay
+      setTimeout(() => {
+        changeSoundscape(previewLandscape.soundscape);
+        if (!isSoundscapePlaying) {
+          toggleSoundscape();
+        }
+      }, 100);
+    } else if (!isPreviewActive && isSoundscapePlaying) {
+      // Stop audio when preview is closed
+      toggleSoundscape();
     }
-  }, [previewLandscape, isPreviewActive, changeSoundscape]);
+  }, [previewLandscape, isPreviewActive, changeSoundscape, isSoundscapePlaying, toggleSoundscape]);
   
   // Filter landscapes based on active tab, search query, category, and soundscape
   const filteredLandscapes = landscapeTemplates.filter(landscape => {
@@ -406,7 +421,7 @@ const Landscapes: React.FC = () => {
               {/* Preview Content */}
               <div className="flex-1 overflow-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-                  {/* Left: Preview Image */}
+                  {/* Left: Preview 3D Landscape with Animation */}
                   <div className="lg:col-span-2">
                     <div 
                       className="rounded-lg overflow-hidden aspect-video relative" 
@@ -414,14 +429,24 @@ const Landscapes: React.FC = () => {
                         background: `linear-gradient(135deg, ${previewLandscape.colors.primary}, ${previewLandscape.colors.secondary})`
                       }}
                     >
+                      {/* 3D Animated Landscape */}
+                      <div className="absolute inset-0 z-10">
+                        <LandscapePreviewCanvas 
+                          colors={previewLandscape.colors}
+                          soundscapeType={previewLandscape.soundscape}
+                          isActive={isPreviewActive}
+                        />
+                      </div>
+                      
+                      {/* Background Image (visible during canvas loading) */}
                       <img 
                         src={previewLandscape.thumbnailUrl} 
                         alt={previewLandscape.name}
-                        className="w-full h-full object-cover mix-blend-overlay"
+                        className="w-full h-full object-cover mix-blend-overlay opacity-70"
                       />
                       
                       {/* Audio controls */}
-                      <div className="absolute bottom-4 right-4 flex space-x-2">
+                      <div className="absolute bottom-4 right-4 flex space-x-2 z-20">
                         <Button 
                           size="sm" 
                           onClick={toggleSoundscape}
