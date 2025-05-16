@@ -190,42 +190,74 @@ export function useToneAudio(options: ToneAudioOptions) {
       }
     }
     
-    // Define notes based on current sentiment
-    updateSoundParameters();
+    // Make sure Tone is started properly, with user interaction
+    Tone.start().then(() => {
+      // Safety check - ensure we're still mounted after async operation
+      if (!isMountedRef.current || !synthRef.current) return;
+      
+      // Define notes based on current sentiment
+      updateSoundParameters();
+      
+      // Make sure we stop any existing transport to avoid conflicts
+      if (Tone.Transport.state === 'started') {
+        Tone.Transport.stop();
+        // Small delay to ensure clean restart
+        setTimeout(() => {
+          if (isMountedRef.current) startTransport();
+        }, 100);
+      } else {
+        startTransport();
+      }
+    }).catch(err => {
+      console.error('Error starting Tone.js:', err);
+    });
     
-    // Start transport if not already started
-    if (Tone.Transport.state !== 'started') {
-      Tone.Transport.start();
-    }
-    
-    // Set up repeating pattern
-    try {
-      loopRef.current = new Tone.Loop(time => {
-        // Verify we still have access to the synth and it's not disposed
-        if (!synthRef.current || !isMountedRef.current || notesRef.current.length === 0) return;
+    function startTransport() {
+      if (!isMountedRef.current || !synthRef.current) return;
+      
+      // Start transport with explicit time to avoid "start time must be greater" errors
+      try {
+        Tone.Transport.start("+0.1");
         
+        // Set up repeating pattern with better error handling
         try {
-          // Play a random note from the current scale
-          const note = notesRef.current[Math.floor(Math.random() * notesRef.current.length)];
-          const duration = Math.random() > 0.7 ? "8n" : "4n";
+          loopRef.current = new Tone.Loop(time => {
+            // Verify we still have access to the synth and it's not disposed
+            if (!synthRef.current || !isMountedRef.current || !notesRef.current || notesRef.current.length === 0) return;
+            
+            try {
+              // Play a random note from the current scale
+              const note = notesRef.current[Math.floor(Math.random() * notesRef.current.length)];
+              const duration = Math.random() > 0.7 ? "8n" : "4n";
+              
+              // Adjust volume based on sentiment intensity (with limits)
+              const sentimentValue = typeof optionsRef.current.sentimentScore === 'number' 
+                ? optionsRef.current.sentimentScore 
+                : 0;
+              const velocity = Math.min(0.7, 0.3 + Math.abs(sentimentValue) * 0.4);
+              
+              // Check if synth is still available before triggering note
+              if (synthRef.current) {
+                // Add a tiny offset to avoid timing conflicts
+                synthRef.current.triggerAttackRelease(note, duration, time + 0.01, velocity);
+              }
+            } catch (error) {
+              console.log('Error in tone loop callback:', error);
+            }
+          }, "4n");
           
-          // Adjust volume based on sentiment intensity
-          const velocity = Math.min(0.7, 0.3 + Math.abs(optionsRef.current.sentimentScore) * 0.4);
-          
-          // Check if synth is still available before triggering note
-          if (synthRef.current) {
-            synthRef.current.triggerAttackRelease(note, duration, time, velocity);
-          }
+          // Start with explicit time to avoid "start time must be greater" errors
+          loopRef.current.start("+0.1");
         } catch (error) {
-          console.log('Error in tone loop callback:', error);
+          console.error('Failed to create Tone.js loop:', error);
         }
-      }, "4n").start(0);
-    } catch (error) {
-      console.error('Failed to create Tone.js loop:', error);
-    }
-    
-    if (isMountedRef.current) {
-      setIsPlaying(true);
+        
+        if (isMountedRef.current) {
+          setIsPlaying(true);
+        }
+      } catch (err) {
+        console.error('Error starting Tone.js transport:', err);
+      }
     }
   }, [updateSoundParameters]);
 
