@@ -1,5 +1,44 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Define a simple interface for the SpeechRecognition object
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onstart: (event: Event) => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: (event: Event) => void;
+}
+
+// Define the result event structure
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: {
+        transcript: string;
+        confidence: number;
+      }
+    }
+  }
+}
+
+// Define the error event structure
+interface SpeechRecognitionErrorEvent {
+  error: string;
+  message?: string;
+}
+
+// SpeechRecognition constructor
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
+
 interface SpeechRecognitionHook {
   isListening: boolean;
   transcript: string;
@@ -16,12 +55,12 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
   const [transcript, setTranscript] = useState<string>('');
   const [finalTranscript, setFinalTranscript] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const [browserSupportsSpeechRecognition, setBrowserSupportsSpeechRecognition] = useState<boolean>(false);
 
   useEffect(() => {
     // Check if browser supports SpeechRecognition
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     // Detect browser for better user guidance
     const isFirefox = typeof window !== 'undefined' && 
@@ -49,7 +88,7 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
     }
 
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       const recognition = recognitionRef.current;
 
@@ -65,7 +104,7 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
         setError(null);
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let interimTranscript = '';
         let finalTranscriptValue = '';
 
@@ -84,7 +123,7 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
         }
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         setError(`Speech recognition error: ${event.error}`);
         if (event.error === 'not-allowed') {
           setError('Microphone access denied. Please enable microphone permissions.');
@@ -141,7 +180,7 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
 // Add TypeScript declarations for the Web Speech API
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition: SpeechRecognitionConstructor;
+    webkitSpeechRecognition: SpeechRecognitionConstructor;
   }
 }

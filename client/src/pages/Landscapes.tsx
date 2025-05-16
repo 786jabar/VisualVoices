@@ -864,6 +864,13 @@ const Landscapes: React.FC = () => {
       <footer className="py-4 px-6 text-center text-gray-500 border-t border-gray-800">
         <p>Vocal Earth — Browse and select landscape templates for your creations</p>
       </footer>
+      
+      {/* Custom Landscape Upload Modal */}
+      <CustomLandscapeUpload 
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onLandscapeCreate={handleCreateCustomLandscape}
+      />
     </div>
   );
 };
