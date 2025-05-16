@@ -483,16 +483,22 @@ const Landscapes: React.FC = () => {
                     <div 
                       className="rounded-lg overflow-hidden aspect-video relative" 
                       style={{
-                        background: `linear-gradient(135deg, ${previewLandscape.colors.primary}, ${previewLandscape.colors.secondary})`
+                        background: `linear-gradient(135deg, ${previewLandscape?.colors?.primary || '#3b5998'}, ${previewLandscape?.colors?.secondary || '#192a56'})`
                       }}
                     >
-                      {/* 3D Animated Landscape */}
+                      {/* 3D Animated Landscape - with error handling */}
                       <div className="absolute inset-0 z-10">
-                        <LandscapePreviewCanvas 
-                          colors={previewLandscape.colors}
-                          soundscapeType={previewLandscape.soundscape}
-                          isActive={isPreviewActive}
-                        />
+                        {previewLandscape && (
+                          <LandscapePreviewCanvas 
+                            colors={{
+                              primary: previewLandscape.colors?.primary || '#3b5998',
+                              secondary: previewLandscape.colors?.secondary || '#192a56',
+                              accent: previewLandscape.colors?.accent || '#4cd137'
+                            }}
+                            soundscapeType={previewLandscape.soundscape}
+                            isActive={isPreviewActive}
+                          />
+                        )}
                       </div>
                       
                       {/* Background Image (visible during canvas loading) */}
