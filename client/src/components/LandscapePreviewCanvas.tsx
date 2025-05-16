@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 // Fix for p5.js type issues - using a more explicit import approach
+// @ts-ignore - Suppressing TypeScript errors for p5 import
 import p5 from 'p5';
-// @ts-ignore - Ignoring the type checking for p5 import issue
 
 // Define prop types
 interface LandscapePreviewCanvasProps {

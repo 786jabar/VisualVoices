@@ -1,6 +1,7 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRoute, useLocation } from 'wouter';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { 
   ArrowLeft, 
   Play, 

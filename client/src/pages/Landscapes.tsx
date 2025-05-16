@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'wouter';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { 
   ArrowLeft, 
   Globe, 
@@ -489,15 +490,21 @@ const Landscapes: React.FC = () => {
                       {/* 3D Animated Landscape - with error handling */}
                       <div className="absolute inset-0 z-10">
                         {previewLandscape && (
-                          <LandscapePreviewCanvas 
-                            colors={{
-                              primary: previewLandscape.colors?.primary || '#3b5998',
-                              secondary: previewLandscape.colors?.secondary || '#192a56',
-                              accent: previewLandscape.colors?.accent || '#4cd137'
-                            }}
-                            soundscapeType={previewLandscape.soundscape}
-                            isActive={isPreviewActive}
-                          />
+                          <ErrorBoundary fallback={
+                            <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white">
+                              <p>Could not load landscape visualization</p>
+                            </div>
+                          }>
+                            <LandscapePreviewCanvas 
+                              colors={{
+                                primary: previewLandscape.colors?.primary || '#3b5998',
+                                secondary: previewLandscape.colors?.secondary || '#192a56',
+                                accent: previewLandscape.colors?.accent || '#4cd137'
+                              }}
+                              soundscapeType={previewLandscape.soundscape || 'peaceful'}
+                              isActive={isPreviewActive}
+                            />
+                          </ErrorBoundary>
                         )}
                       </div>
                       
