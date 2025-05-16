@@ -248,6 +248,7 @@ export default function Home() {
           poeticSummary={poeticSummary}
           isProcessingSummary={summaryMutation.isPending}
           onSaveImage={handleSaveImage}
+          onShareImage={handleShare}
           isAudioEnabled={settings.audioEnabled}
           onToggleAudio={handleToggleAudio}
           colorIntensity={settings.colorIntensity}
