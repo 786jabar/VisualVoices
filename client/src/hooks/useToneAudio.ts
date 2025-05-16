@@ -96,6 +96,9 @@ export function useToneAudio(options: ToneAudioOptions) {
     soundsRef.current.synth.volume.value = Tone.gainToDb(options.volume);
   }, [options.volume, isInitialized]);
 
+  // Store loop reference to avoid disposal issues
+  const loopRef = useRef<Tone.Loop | null>(null);
+
   // Start playing ambient music
   const startPlaying = useCallback(() => {
     if (!soundsRef.current.synth) return;
@@ -109,6 +112,11 @@ export function useToneAudio(options: ToneAudioOptions) {
     // Start transport
     Tone.Transport.start();
     
+    // Clean up any existing loop before creating a new one
+    if (loopRef.current) {
+      loopRef.current.dispose();
+    }
+    
     // Set up repeating pattern
     const loop = new Tone.Loop(time => {
       if (!soundsRef.current.synth || !soundsRef.current.notes) return;
@@ -120,12 +128,14 @@ export function useToneAudio(options: ToneAudioOptions) {
       // Adjust volume based on sentiment intensity
       const velocity = Math.min(0.7, 0.3 + Math.abs(optionsRef.current.sentimentScore) * 0.4);
       
-      soundsRef.current.synth.triggerAttackRelease(note, duration, time, velocity);
+      // Check if synth is still available before triggering note
+      if (soundsRef.current.synth) {
+        soundsRef.current.synth.triggerAttackRelease(note, duration, time, velocity);
+      }
     }, "4n").start(0);
     
-    return () => {
-      loop.dispose();
-    };
+    // Store loop reference for cleanup
+    loopRef.current = loop;
   }, []);
 
   // Stop playing ambient music

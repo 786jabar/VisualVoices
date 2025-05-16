@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Gallery from "@/pages/Gallery";
 import GalleryItem from "@/pages/GalleryItem";
 import LandingPage from "@/pages/LandingPage";
+import Explore from "@/pages/Explore";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/create" component={Home} />
       <Route path="/gallery" component={Gallery} />
       <Route path="/gallery/:id" component={GalleryItem} />
+      <Route path="/explore" component={Explore} />
       <Route component={NotFound} />
     </Switch>
   );

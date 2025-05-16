@@ -7,7 +7,8 @@ import {
   Sparkles,
   PlayCircle, 
   Layers,
-  Save
+  Save,
+  Globe
 } from 'lucide-react';
 
 const LandingPage: FC = () => {
@@ -40,10 +41,17 @@ const LandingPage: FC = () => {
               </Button>
             </Link>
             
+            <Link href="/explore">
+              <Button className="h-14 px-8 text-base bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Browse Landscapes
+              </Button>
+            </Link>
+            
             <Link href="/gallery">
               <Button variant="outline" className="h-14 px-8 text-base border-indigo-400 text-indigo-400 hover:bg-indigo-950 flex items-center gap-2">
                 <Layers className="h-5 w-5" />
-                Explore Gallery
+                View Gallery
               </Button>
             </Link>
           </div>
