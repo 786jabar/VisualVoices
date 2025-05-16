@@ -157,19 +157,50 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         p.translate(0, 0, -500);
         p.rotateX(p.PI/2);
         
-        let skyColorTop = p.color(p.red(primaryColor), p.green(primaryColor), p.blue(primaryColor));
-        let skyColorBottom = p.color(p.red(secondaryColor), p.green(secondaryColor), p.blue(secondaryColor));
+        // Create new color objects - this avoids referencing the original objects
+        // which might be undefined initially during animation
+        let skyColorTop = p.color(50, 100, 150);
+        let skyColorBottom = p.color(20, 40, 80);
+        
+        // Safely get color components from primaryColor/secondaryColor
+        if (primaryColor) {
+          try {
+            skyColorTop = p.color(
+              primaryColor.levels ? primaryColor.levels[0] : 50, 
+              primaryColor.levels ? primaryColor.levels[1] : 100, 
+              primaryColor.levels ? primaryColor.levels[2] : 150
+            );
+          } catch (e) {
+            // Keep default if error
+          }
+        }
+        
+        if (secondaryColor) {
+          try {
+            skyColorBottom = p.color(
+              secondaryColor.levels ? secondaryColor.levels[0] : 20, 
+              secondaryColor.levels ? secondaryColor.levels[1] : 40, 
+              secondaryColor.levels ? secondaryColor.levels[2] : 80
+            );
+          } catch (e) {
+            // Keep default if error
+          }
+        }
         
         // Adjust colors based on soundscape type
-        if (soundscapeType === 'dramatic') {
-          skyColorTop.setAlpha(180);
-          skyColorBottom.setAlpha(220);
-        } else if (soundscapeType === 'mysterious') {
-          skyColorTop.setAlpha(150);
-          skyColorBottom.setAlpha(200);
-        } else {
-          skyColorTop.setAlpha(200);
-          skyColorBottom.setAlpha(240);
+        try {
+          if (soundscapeType === 'dramatic') {
+            skyColorTop.setAlpha(180);
+            skyColorBottom.setAlpha(220);
+          } else if (soundscapeType === 'mysterious') {
+            skyColorTop.setAlpha(150);
+            skyColorBottom.setAlpha(200);
+          } else {
+            skyColorTop.setAlpha(200);
+            skyColorBottom.setAlpha(240);
+          }
+        } catch (e) {
+          // If alpha setting fails, continue without it
         }
         
         // Draw sky dome
