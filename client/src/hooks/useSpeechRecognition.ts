@@ -108,12 +108,18 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
         let interimTranscript = '';
         let finalTranscriptValue = '';
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscriptValue += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
+        // Handle results safely with null checks
+        if (event && event.results) {
+          // Loop through results with explicit checks
+          for (let i = event.resultIndex || 0; i < event.results.length; i++) {
+            if (event.results[i] && event.results[i][0] && event.results[i][0].transcript) {
+              const transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalTranscriptValue += transcript + ' ';
+              } else {
+                interimTranscript += transcript;
+              }
+            }
           }
         }
 

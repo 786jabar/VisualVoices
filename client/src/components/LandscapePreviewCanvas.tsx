@@ -1,5 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import p5 from 'p5';
+
+// Type definition for p5.Color to fix typing issues
+type P5Color = any;
 
 interface LandscapePreviewCanvasProps {
   colors: {
@@ -37,9 +40,21 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       let useBlend = soundscapeType === 'melancholic';
       
       // Decode color hex values
-      const primaryColor = p.color(colors.primary);
-      const secondaryColor = p.color(colors.secondary);
-      const accentColor = p.color(colors.accent);
+      let primaryColor: P5Color;
+      let secondaryColor: P5Color;
+      let accentColor: P5Color;
+      
+      // Initialize with default colors first
+      primaryColor = p.color(50, 100, 150);
+      secondaryColor = p.color(20, 40, 80);
+      accentColor = p.color(200, 150, 100);
+      
+      // Try to apply custom colors if they exist
+      if (colors && typeof colors === 'object') {
+        if (colors.primary) primaryColor = p.color(colors.primary);
+        if (colors.secondary) secondaryColor = p.color(colors.secondary);
+        if (colors.accent) accentColor = p.color(colors.accent);
+      }
       
       // Setup function
       p.setup = () => {
