@@ -12,68 +12,181 @@ export function downloadFile(data: string, filename: string, type: string) {
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+  document.body.appendChild(link); // Append to body for Firefox compatibility
   link.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(link); // Clean up
+  setTimeout(() => URL.revokeObjectURL(url), 100); // Delay to ensure download begins
 }
 
-// Function to download canvas as image
+// Function to download canvas as image with timestamp
 export function downloadCanvasAsImage(canvas: HTMLCanvasElement, filename: string = "vocal-earth-landscape.png") {
-  // Convert canvas to data URL and download
   try {
-    const dataUrl = canvas.toDataURL("image/png");
+    // Create high-quality image from canvas
+    const dataUrl = canvas.toDataURL("image/png", 1.0);
+    
+    // Add timestamp to filename for uniqueness
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    const parts = filename.split('.');
+    const extension = parts.pop() || 'png';
+    const nameWithTimestamp = `${parts.join('.')}-${timestamp}.${extension}`;
+    
+    // Create and trigger download link
     const link = document.createElement("a");
     link.href = dataUrl;
-    link.download = filename;
+    link.download = nameWithTimestamp;
+    document.body.appendChild(link);
     link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }, 100);
+    
+    return true;
   } catch (error) {
     console.error("Error downloading canvas:", error);
     throw new Error("Failed to download image");
   }
 }
 
-// Function to analyze text sentiment
-// Returns a score between -1 (negative) and 1 (positive)
+// Enhanced sentiment analysis with more comprehensive word lists
 export function analyzeSentiment(text: string): number {
-  // This is a simple placeholder. In production, we would use a proper
-  // sentiment analysis library like sentiment.js or call a sentiment API
+  if (!text || text.length < 2) return 0;
+  
+  // Expanded word lists for better sentiment detection
   const positiveWords = [
     "happy", "good", "great", "excellent", "wonderful", "amazing", "love",
-    "beautiful", "joy", "peaceful", "calm", "bright", "delight"
+    "beautiful", "joy", "peaceful", "calm", "bright", "delight", "fantastic",
+    "superb", "terrific", "outstanding", "brilliant", "splendid", "perfect",
+    "nice", "pleasant", "awesome", "marvelous", "spectacular", "paradise",
+    "glorious", "triumph", "success", "succeed", "victory", "win", "winning",
+    "celebrate", "celebration", "bliss", "ecstatic", "euphoric", "thrilled",
+    "excited", "exciting", "enthusiastic", "vibrant", "vivid", "radiant",
+    "sublime", "inspiring", "inspired", "hope", "hopeful", "optimistic",
+    "positive", "cheerful", "glad", "pleased", "grateful", "thankful"
   ];
   
   const negativeWords = [
     "sad", "bad", "terrible", "awful", "horrible", "hate", "angry",
-    "upset", "dark", "gloomy", "depressing", "fear", "scary"
+    "upset", "dark", "gloomy", "depressing", "fear", "scary", "lonely",
+    "anxious", "anxiety", "worried", "worry", "afraid", "frightened",
+    "terrified", "terror", "horrific", "dreadful", "dire", "disaster",
+    "tragic", "tragedy", "sorrow", "sorrowful", "grief", "grieving",
+    "miserable", "unhappy", "unfortunate", "regret", "regretful", "pain",
+    "painful", "suffering", "suffer", "agony", "agonizing", "nightmare",
+    "horrifying", "devastating", "devastated", "ruin", "ruined", "destroyed",
+    "destruction", "catastrophe", "catastrophic", "terrible", "despair"
   ];
   
+  // Negation words that flip sentiment
+  const negationWords = ["not", "no", "never", "none", "neither", "nor", "barely", "hardly"];
+  
+  // Amplifier words that strengthen sentiment
+  const amplifierWords = ["very", "extremely", "incredibly", "absolutely", "completely", "totally"];
+  
+  // Extract words using better regex (handles punctuation better)
   const words = text.toLowerCase().match(/\b(\w+)\b/g) || [];
   let score = 0;
+  let wordCount = 0;
+  let negationActive = false;
+  let amplifierActive = false;
   
-  words.forEach(word => {
-    if (positiveWords.includes(word)) score += 1;
-    if (negativeWords.includes(word)) score -= 1;
-  });
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    
+    // Check for negation
+    if (negationWords.includes(word)) {
+      negationActive = true;
+      continue;
+    }
+    
+    // Check for amplifiers
+    if (amplifierWords.includes(word)) {
+      amplifierActive = true;
+      continue;
+    }
+    
+    // Determine base sentiment value
+    let sentimentValue = 0;
+    if (positiveWords.includes(word)) {
+      sentimentValue = 1;
+      wordCount++;
+    } else if (negativeWords.includes(word)) {
+      sentimentValue = -1;
+      wordCount++;
+    }
+    
+    // Apply negation if active (flips the sentiment)
+    if (negationActive && sentimentValue !== 0) {
+      sentimentValue *= -0.9; // Slightly reduced impact for negated terms
+      negationActive = false;
+    }
+    
+    // Apply amplifier if active (strengthens the sentiment)
+    if (amplifierActive && sentimentValue !== 0) {
+      sentimentValue *= 1.5;
+      amplifierActive = false;
+    }
+    
+    score += sentimentValue;
+    
+    // Reset negation after 3 words if not used
+    if (negationActive && i > 0 && i % 3 === 0) {
+      negationActive = false;
+    }
+  }
   
-  // Normalize score to be between -1 and 1
-  return words.length ? score / Math.sqrt(score * score + words.length) : 0;
+  // Normalize score to be between -1 and 1 using a better formula
+  // that preserves more of the sentiment intensity
+  if (wordCount > 0) {
+    const normalizedScore = score / Math.sqrt(Math.abs(score) + wordCount);
+    return Math.max(-1, Math.min(1, normalizedScore)); // Clamp between -1 and 1
+  }
+  
+  return 0;
 }
 
-// Function to get sentiment label from score
+// Function to get sentiment label from score with more sensitivity
 export function getSentimentLabel(score: number): "Negative" | "Neutral" | "Positive" {
-  if (score < -0.2) return "Negative";
-  if (score > 0.2) return "Positive";
+  if (score < -0.15) return "Negative";
+  if (score > 0.15) return "Positive";
   return "Neutral";
 }
 
-// Function to get sentiment color class
+// Enhanced function to get sentiment color class with more distinctive colors
 export function getSentimentColorClass(sentiment: "Negative" | "Neutral" | "Positive"): string {
   switch (sentiment) {
     case "Negative":
-      return "bg-accent text-white";
+      return "bg-rose-600 text-white";
     case "Positive":
-      return "bg-secondary text-white";
+      return "bg-emerald-600 text-white";
     case "Neutral":
     default:
-      return "bg-dark-200 text-dark-500";
+      return "bg-indigo-600 text-white";
+  }
+}
+
+// Get sentiment emoji for visual indicators
+export function getSentimentEmoji(sentiment: "Negative" | "Neutral" | "Positive"): string {
+  switch (sentiment) {
+    case "Negative":
+      return "⚡"; // Lightning bolt for negative/stormy
+    case "Positive":
+      return "✨"; // Sparkles for positive/bright
+    case "Neutral":
+      return "💫"; // Dizzy for neutral/mysterious
+  }
+}
+
+// Get descriptive text for sentiment
+export function getSentimentDescription(sentiment: "Negative" | "Neutral" | "Positive"): string {
+  switch (sentiment) {
+    case "Negative":
+      return "A stormy, intense landscape emerges";
+    case "Positive":
+      return "A vibrant, luminous world unfolds";
+    case "Neutral":
+      return "A mysterious, balanced realm appears";
   }
 }
