@@ -267,6 +267,16 @@ export default function Home() {
         settings={settings}
         onSettingsChange={setSettings}
       />
+      
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        imageUrl={shareImageUrl}
+        title="My Vocal Earth Creation"
+        description={transcript || undefined}
+        poeticSummary={poeticSummary}
+      />
     </div>
   );
 }
