@@ -63,6 +63,7 @@ const GalleryItem: FC = () => {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [showTranscript, setShowTranscript] = useState(false);
   const [showSoundSettings, setShowSoundSettings] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   // Soundscape settings
   const [currentSoundscape, setCurrentSoundscape] = useState<SoundscapeType>('peaceful');
@@ -233,27 +234,26 @@ const GalleryItem: FC = () => {
   
   // Handle share
   const handleShare = () => {
-    if (navigator.share && visualization) {
-      navigator.share({
-        title: visualization.title,
-        text: visualization.poeticSummary || 'Check out this surreal landscape I created with Vocal Earth!',
-        url: window.location.href
-      }).catch(error => {
-        toast({
-          title: 'Share Failed',
-          description: 'Could not share content.',
-          variant: 'destructive'
-        });
-      });
+    if (visualization) {
+      // Open the share modal with visualization details
+      setIsShareModalOpen(true);
     } else {
-      // Fallback to copy link
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        toast({
-          title: 'Link Copied',
-          description: 'Share link copied to clipboard',
-        });
+      toast({
+        title: 'Cannot share',
+        description: 'Visualization not available to share.',
+        variant: 'destructive'
       });
     }
+  };
+  
+  // Handle copy link to clipboard
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      toast({
+        title: 'Link Copied',
+        description: 'Share link copied to clipboard'
+      });
+    });
   };
   
   if (isError) {
