@@ -1,222 +1,200 @@
-import { FC, useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useRoute } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useRoute, useLocation } from 'wouter';
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { 
   ArrowLeft, 
-  Play, 
-  Pause, 
   Download, 
   Share2, 
-  Sparkles,
-  Volume2,
-  VolumeX,
   MessageSquare,
+  Play,
+  Pause,
   Music,
-  PlayCircle,
-  PauseCircle,
-  Settings
+  VolumeX,
+  Volume2,
+  FileDown
 } from 'lucide-react';
-import SocialShareModal from '@/components/SocialShareModal';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { apiRequest, generateNarration } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useP5Visualization } from '@/hooks/useP5Visualization';
-import { useToneAudio } from '@/hooks/useToneAudio';
+import { Card, CardContent } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { useMultipleSoundscapes, SoundscapeType } from '@/hooks/useMultipleSoundscapes';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
-import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
-import { getSentimentEmoji, getSentimentDescription } from '@/lib/utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import { getSentimentEmoji, getSentimentDescription, downloadImage } from '@/lib/utils';
+import SocialShareModal from '@/components/SocialShareModal';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import type { GalleryItemResponse } from '@shared/schema';
 
-// Define interface for visualization item
-interface Visualization {
-  id: number;
-  title: string;
-  description: string | null;
-  transcriptionText: string;
-  sentiment: 'Positive' | 'Negative' | 'Neutral';
-  sentimentScore: number;
-  poeticSummary: string | null;
-  imageData: string;
-  visualSettings: {
-    colorIntensity: boolean;
-    motion: boolean;
-  } | null;
-  createdAt: string;
-}
-
-const GalleryItem: FC = () => {
+export default function GalleryItemPage() {
   const { toast } = useToast();
   const [, params] = useRoute<{ id: string }>('/gallery/:id');
-  const [, navigate] = useLocation();
-  
-  // Player state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [showTranscript, setShowTranscript] = useState(false);
-  const [showSoundSettings, setShowSoundSettings] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
-  // Soundscape settings
-  const [currentSoundscape, setCurrentSoundscape] = useState<SoundscapeType>('peaceful');
-  const [audioVolume, setAudioVolume] = useState(0.6);
-  
-  // AI narration state
-  const [narration, setNarration] = useState<string | null>(null);
-  const [isGeneratingNarration, setIsGeneratingNarration] = useState(false);
+  // Audio control state
+  const { isActive: isAudioApproved, requestPlayback, stopPlayback } = useAudioCoordinator('gallery-item');
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0.5);
+  const [isNarrating, setIsNarrating] = useState(false);
   
   // Fetch visualization data
   const { 
-    data: visualization,
+    data: galleryItem,
     isLoading,
     isError,
     error
   } = useQuery({
     queryKey: ['gallery', params?.id],
-    queryFn: () => apiRequest<Visualization>(`/api/gallery/${params?.id}`, { method: 'GET' }),
+    queryFn: () => apiRequest<GalleryItemResponse>(`/api/gallery/${params?.id}`, { method: 'GET' }),
     enabled: !!params?.id
   });
   
-  // Initialize visualization (static version)
-  const { canvasRef, p5Instance } = useP5Visualization({
-    sentiment: visualization?.sentiment || 'Neutral',
-    sentimentScore: visualization?.sentimentScore || 0,
-    text: visualization?.transcriptionText || '',
-    colorIntensity: visualization?.visualSettings?.colorIntensity || true,
-    motion: visualization?.visualSettings?.motion || true
-  });
+  // Extract sound type from sentiment
+  const extractSoundscapeType = (sentiment: string): SoundscapeType => {
+    switch (sentiment) {
+      case 'Positive':
+        return 'cheerful';
+      case 'Negative':
+        return 'dramatic';
+      case 'Neutral':
+      default:
+        return 'peaceful';
+    }
+  };
   
-  // Initialize multiple soundscapes
+  // Soundscape system for ambient audio
   const { 
     isPlaying: isSoundscapePlaying,
     isInitialized: isSoundscapeInitialized,
-    currentSoundscape: activeSoundscape,
+    currentSoundscape,
     changeSoundscape,
     togglePlay: toggleSoundscape,
     setVolume: setSoundscapeVolume,
-    initialize: initializeSoundscapes
+    initialize: initializeSoundscape
   } = useMultipleSoundscapes({
-    initialType: currentSoundscape,
-    isActive: isAudioEnabled,
+    initialType: extractSoundscapeType(galleryItem?.sentiment || 'Neutral'),
+    isActive: false,
     volume: audioVolume
   });
   
   // Speech synthesis for narration
   const { 
     speak, 
-    stop: stopSpeaking, 
-    isSpeaking, 
-    isPaused,
-    pause: pauseSpeaking,
-    resume: resumeSpeaking,
-    isSupported: isSpeechSynthesisSupported
+    stop: stopSpeaking,
+    isSpeaking,
+    voices,
+    setVoice,
+    setVolume: setSpeechVolume 
   } = useSpeechSynthesis({
-    rate: 0.9,
-    pitch: 1.0,
-    volume: 1.0
+    rate: 0.95,
+    pitch: 1,
+    volume: audioVolume
   });
   
-  // Generate AI narration for the landscape
-  const generateAINarration = async () => {
-    if (!visualization?.transcriptionText || isGeneratingNarration) return;
-    
-    try {
-      setIsGeneratingNarration(true);
-      const generatedNarration = await generateNarration(visualization.transcriptionText);
-      setNarration(generatedNarration);
-    } catch (error) {
-      console.error('Failed to generate narration:', error);
-      toast({
-        title: 'Narration Error',
-        description: 'Could not generate AI narration',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsGeneratingNarration(false);
-    }
-  };
-  
-  // Initialize audio when component mounts
+  // Initialize audio system
   useEffect(() => {
-    const initAudio = async () => {
+    const initialize = async () => {
       try {
-        await initializeSoundscapes();
-        
-        // Set initial soundscape based on sentiment
-        if (visualization) {
-          let soundscapeType: SoundscapeType;
-          
-          switch(visualization.sentiment) {
-            case 'Positive':
-              soundscapeType = visualization.sentimentScore > 0.5 ? 'cheerful' : 'peaceful';
-              break;
-            case 'Negative':
-              soundscapeType = visualization.sentimentScore < -0.5 ? 'dramatic' : 'melancholic';
-              break;
-            default:
-              soundscapeType = 'mysterious';
-          }
-          
-          setCurrentSoundscape(soundscapeType);
-          changeSoundscape(soundscapeType);
-        }
+        await initializeSoundscape();
       } catch (error) {
         console.error('Failed to initialize audio:', error);
       }
     };
     
-    initAudio();
-  }, [initializeSoundscapes, visualization, changeSoundscape]);
+    initialize();
+  }, [initializeSoundscape]);
   
-  // Generate narration when visualization data loads
+  // Update soundscape when sentiment changes
   useEffect(() => {
-    if (visualization && !narration && !isGeneratingNarration) {
-      generateAINarration();
+    if (galleryItem && isSoundscapeInitialized) {
+      const soundType = extractSoundscapeType(galleryItem.sentiment);
+      changeSoundscape(soundType);
     }
-  }, [visualization, narration, isGeneratingNarration]);
+  }, [galleryItem, isSoundscapeInitialized, changeSoundscape]);
   
-  // Use audio coordinator to manage global audio state
-  const { isActive: isAudioApproved, requestPlayback, stopPlayback } = useAudioCoordinator('gallery-item');
-
-  // Toggle audio playback with global coordination
+  // Handle audio toggling
   const handleToggleAudio = async () => {
     if (isAudioEnabled) {
       // Turn off audio
       setIsAudioEnabled(false);
-      stopPlayback(); // Release global audio lock
+      stopPlayback();
       
-      if (isSoundscapeInitialized) {
+      if (isSoundscapePlaying) {
         await toggleSoundscape();
       }
     } else {
-      // First, request permission to play audio
+      // Request permission to play audio
       const granted = requestPlayback();
       
       if (granted) {
         setIsAudioEnabled(true);
         
-        if (isSoundscapeInitialized) {
+        if (!isSoundscapePlaying) {
           await toggleSoundscape();
         }
       }
     }
   };
   
-  // Handle soundscape change
-  const handleChangeSoundscape = (value: string) => {
-    const newSoundscape = value as SoundscapeType;
-    setCurrentSoundscape(newSoundscape);
-    changeSoundscape(newSoundscape);
+  // Handle narration
+  const handleNarration = () => {
+    if (isNarrating) {
+      stopSpeaking();
+      setIsNarrating(false);
+    } else {
+      // If we have a poetic summary, narrate it
+      if (galleryItem?.poeticSummary) {
+        setIsNarrating(true);
+        speak(galleryItem.poeticSummary);
+        
+        // Set up listener for when narration ends
+        const handleSpeechEnd = () => {
+          setIsNarrating(false);
+          // Remove the event listener
+          window.speechSynthesis.removeEventListener('end', handleSpeechEnd);
+        };
+        
+        // Add event listener for speech end
+        window.speechSynthesis.addEventListener('end', handleSpeechEnd);
+      } else {
+        // Narrate transcription if no poetic summary
+        if (galleryItem?.transcriptionText) {
+          setIsNarrating(true);
+          speak(galleryItem.transcriptionText);
+          
+          // Set up listener for when narration ends
+          const handleSpeechEnd = () => {
+            setIsNarrating(false);
+            // Remove the event listener
+            window.speechSynthesis.removeEventListener('end', handleSpeechEnd);
+          };
+          
+          // Add event listener for speech end
+          window.speechSynthesis.addEventListener('end', handleSpeechEnd);
+        }
+      }
+    }
+  };
+  
+  // Handle image download
+  const handleDownload = () => {
+    if (galleryItem?.imageData) {
+      downloadImage(galleryItem.imageData, `vocal-earth-${galleryItem.id}`);
+      
+      toast({
+        title: 'Success',
+        description: 'Image downloaded successfully'
+      });
+    }
+  };
+  
+  // Handle share
+  const handleShare = () => {
+    if (galleryItem) {
+      setIsShareModalOpen(true);
+    }
   };
   
   // Handle volume change
@@ -224,9 +202,10 @@ const GalleryItem: FC = () => {
     const newVolume = value[0];
     setAudioVolume(newVolume);
     setSoundscapeVolume(newVolume);
+    setSpeechVolume(newVolume);
   };
   
-  // Format date for display
+  // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -238,425 +217,227 @@ const GalleryItem: FC = () => {
     }).format(date);
   };
   
-  // Handle download image
-  const handleDownload = () => {
-    if (visualization?.imageData) {
-      const link = document.createElement('a');
-      link.href = visualization.imageData;
-      link.download = `${visualization.title.replace(/\s+/g, '-').toLowerCase()}-${visualization.id}.png`;
-      link.click();
-      
-      toast({
-        title: 'Image Downloaded',
-        description: 'Visualization saved to your device',
-      });
-    }
-  };
-  
-  // Handle share
-  const handleShare = () => {
-    if (visualization) {
-      // Open the share modal with visualization details
-      setIsShareModalOpen(true);
-    } else {
-      toast({
-        title: 'Cannot share',
-        description: 'Visualization not available to share.',
-        variant: 'destructive'
-      });
-    }
-  };
-  
-  // Handle copy link to clipboard
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      toast({
-        title: 'Link Copied',
-        description: 'Share link copied to clipboard'
-      });
-    });
-  };
-  
-  if (isError) {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-indigo-950 to-gray-900 text-white p-4">
-        <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold mb-4">Error Loading Visualization</h1>
-          <p className="text-gray-300 mb-6">{error instanceof Error ? error.message : 'Could not load the visualization. It may have been deleted or you don\'t have permission to view it.'}</p>
-          <Link href="/gallery">
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Gallery
-            </Button>
-          </Link>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="border-b">
+          <div className="container py-4 flex items-center">
+            <Link href="/gallery">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Skeleton className="h-8 w-40 ml-4" />
+          </div>
+        </header>
+        
+        <main className="flex-1 container py-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="aspect-video w-full">
+              <Skeleton className="w-full h-full rounded-lg" />
+            </div>
+            
+            <div className="mt-6 space-y-4">
+              <Skeleton className="h-8 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (isError || !galleryItem) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="border-b">
+          <div className="container py-4 flex items-center">
+            <Link href="/gallery">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold ml-4">Error</h1>
+          </div>
+        </header>
+        
+        <main className="flex-1 container py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-xl font-medium mb-2">Visualization Not Found</h2>
+            <p className="text-gray-500 mb-6">
+              The visualization you're looking for doesn't exist or you don't have permission to view it.
+            </p>
+            <Link href="/gallery">
+              <Button>Return to Gallery</Button>
+            </Link>
+          </div>
+        </main>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-indigo-950 to-gray-900 text-white">
-      {/* Header */}
-      <header className="py-4 px-6 border-b border-gray-800 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Link href="/gallery">
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-              <ArrowLeft className="h-5 w-5" />
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b">
+        <div className="container py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/gallery">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold">{galleryItem.title}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handleShare}>
+              <Share2 className="h-4 w-4" />
             </Button>
-          </Link>
-          <h1 className="text-xl font-bold truncate max-w-md">
-            {isLoading ? <Skeleton className="h-7 w-40 bg-gray-700" /> : visualization?.title}
-          </h1>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Audio toggle */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleToggleAudio}
-            className="text-gray-400 hover:text-white"
-            title={isAudioEnabled ? "Mute audio" : "Enable audio"}
-          >
-            {isAudioEnabled ? (
-              <Volume2 className="h-5 w-5" />
-            ) : (
-              <VolumeX className="h-5 w-5" />
-            )}
-          </Button>
-          
-          {/* Sound settings */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setShowSoundSettings(!showSoundSettings)}
-            className={`text-gray-400 hover:text-white ${showSoundSettings ? 'bg-gray-800' : ''}`}
-            title="Sound settings"
-          >
-            <Music className="h-5 w-5" />
-          </Button>
-          
-          {/* Share button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleShare}
-            className="text-gray-400 hover:text-white"
-            title="Share"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
-          
-          {/* Download button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleDownload}
-            className="text-gray-400 hover:text-white"
-            title="Download"
-          >
-            <Download className="h-5 w-5" />
-          </Button>
+            <Button variant="outline" size="icon" onClick={handleDownload}>
+              <FileDown className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
       
-      {/* Sound settings panel (conditionally shown) */}
-      {showSoundSettings && (
-        <div className="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-6 flex-1">
-            <div className="flex flex-col gap-1 w-64">
-              <label className="text-sm text-gray-300 mb-1">Soundscape Type</label>
-              <Select value={currentSoundscape} onValueChange={handleChangeSoundscape}>
-                <SelectTrigger className="w-full bg-gray-800 border-gray-700">
-                  <SelectValue placeholder="Select soundscape" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="peaceful" className="text-gray-200">Peaceful</SelectItem>
-                  <SelectItem value="mysterious" className="text-gray-200">Mysterious</SelectItem>
-                  <SelectItem value="dramatic" className="text-gray-200">Dramatic</SelectItem>
-                  <SelectItem value="cheerful" className="text-gray-200">Cheerful</SelectItem>
-                  <SelectItem value="melancholic" className="text-gray-200">Melancholic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex flex-col gap-1 flex-1 max-w-sm">
-              <label className="text-sm text-gray-300 mb-1">Volume</label>
-              <Slider 
-                defaultValue={[audioVolume]} 
-                max={1} 
-                step={0.01} 
-                onValueChange={handleVolumeChange}
-                className="py-2" 
-              />
-            </div>
-          </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setShowSoundSettings(false)} 
-            className="text-gray-400 hover:text-white"
-          >
-            Close
-          </Button>
-        </div>
-      )}
-      
-      {/* Main content */}
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Visualization Canvas */}
-        <div className="relative flex-1 bg-black">
-          {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <div ref={canvasRef} className="absolute inset-0"></div>
-          )}
-          
-          {/* Info badge */}
-          {visualization && (
-            <div className="absolute top-4 left-4 bg-gray-900/80 backdrop-blur-sm rounded-lg p-2 text-xs text-white border border-gray-800 transition-all duration-300 z-10">
-              <div className="flex items-center space-x-2">
-                <span>{getSentimentEmoji(visualization.sentiment)}</span>
-                <span>{getSentimentDescription(visualization.sentiment)}</span>
-              </div>
-            </div>
-          )}
-          
-          {/* Narration controls */}
-          {narration && (
-            <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-64 bg-gray-900/80 backdrop-blur-sm rounded-lg p-3 text-white border border-gray-800 transition-all duration-300 z-10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium flex items-center">
-                  <MessageSquare className="h-3 w-3 mr-2 text-indigo-400" />
-                  AI Landscape Guide
-                </span>
-                
-                {isSpeechSynthesisSupported && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 w-6 p-0"
-                    onClick={() => {
-                      if (isSpeaking) {
-                        if (isPaused) {
-                          resumeSpeaking();
-                        } else {
-                          pauseSpeaking();
-                        }
-                      } else {
-                        speak(narration);
-                      }
-                    }}
-                  >
-                    {isSpeaking ? (
-                      isPaused ? (
-                        <PlayCircle className="h-4 w-4 text-indigo-400" />
-                      ) : (
-                        <PauseCircle className="h-4 w-4 text-indigo-400" />
-                      )
-                    ) : (
-                      <PlayCircle className="h-4 w-4 text-indigo-400" />
-                    )}
-                  </Button>
-                )}
-              </div>
+      <main className="flex-1 container py-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Visualization display */}
+            <div className="lg:w-2/3">
+              <ErrorBoundary fallback={
+                <div className="w-full aspect-video flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg">
+                  Image could not be displayed
+                </div>
+              }>
+                <div className="aspect-video w-full relative overflow-hidden rounded-lg shadow-lg">
+                  <img 
+                    src={galleryItem.imageData} 
+                    alt={galleryItem.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </ErrorBoundary>
               
-              <p className="text-xs text-gray-300 line-clamp-3">
-                {narration.length > 120 
-                  ? narration.substring(0, 120) + '...' 
-                  : narration
-                }
-              </p>
-            </div>
-          )}
-        </div>
-        
-        {/* Side Panel */}
-        <div className="w-full md:w-96 bg-gray-900/90 backdrop-blur-sm border-l border-gray-800 flex flex-col overflow-auto">
-          {/* Visualization Info */}
-          <div className="p-4 border-b border-gray-800">
-            {isLoading ? (
-              <>
-                <Skeleton className="h-7 w-full bg-gray-700 mb-3" />
-                <Skeleton className="h-4 w-1/2 bg-gray-700 mb-6" />
-                <Skeleton className="h-20 w-full bg-gray-700" />
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-xl font-semibold">{visualization?.title}</h2>
-                  <span className="text-xs text-gray-400">{formatDate(visualization?.createdAt || '')}</span>
-                </div>
-                
-                {visualization?.description && (
-                  <p className="text-sm text-gray-300 mb-4">{visualization.description}</p>
-                )}
-                
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-xs flex items-center">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    {visualization?.sentiment}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-          
-          {/* Poetic Summary */}
-          {!isLoading && visualization?.poeticSummary && (
-            <div className="p-4 border-b border-gray-800">
-              <h3 className="text-sm font-medium mb-2 flex items-center">
-                <span className="mr-2">✨ Poetic Interpretation</span>
-              </h3>
-              <p className="text-sm italic text-gray-300">{visualization.poeticSummary}</p>
-            </div>
-          )}
-          
-          {/* AI Narration Section */}
-          {!isLoading && (
-            <div className="p-4 border-b border-gray-800">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium flex items-center">
-                  <MessageSquare className="h-4 w-4 mr-2 text-indigo-400" />
-                  <span>AI Landscape Guide</span>
-                </h3>
-                
-                {narration && isSpeechSynthesisSupported && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="h-7 text-xs border-indigo-800 text-indigo-300 hover:bg-indigo-950"
-                    onClick={() => {
-                      if (isSpeaking) {
-                        if (isPaused) {
-                          resumeSpeaking();
-                        } else {
-                          pauseSpeaking();
-                        }
-                      } else {
-                        speak(narration);
-                      }
-                    }}
-                  >
-                    {isSpeaking ? (
-                      isPaused ? (
-                        <>
-                          <PlayCircle className="h-3 w-3 mr-1" />
-                          Resume
-                        </>
-                      ) : (
-                        <>
-                          <PauseCircle className="h-3 w-3 mr-1" />
-                          Pause
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <PlayCircle className="h-3 w-3 mr-1" />
-                        Speak
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-              
-              {isGeneratingNarration ? (
-                <div className="flex items-center space-x-3 p-3 bg-indigo-900/20 rounded-md">
-                  <div className="animate-spin">
-                    <MessageSquare className="h-4 w-4 text-indigo-400" />
-                  </div>
-                  <span className="text-sm text-indigo-200">Generating AI narration...</span>
-                </div>
-              ) : narration ? (
-                <div className="p-3 bg-indigo-900/20 rounded-md border border-indigo-900/30">
-                  <p className="text-sm text-indigo-100">{narration}</p>
-                  
-                  {!isSpeechSynthesisSupported && (
-                    <p className="text-xs text-indigo-400 mt-2">
-                      Note: Your browser doesn't support speech synthesis. You can still read the narration.
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={generateAINarration}
-                  className="w-full py-2 bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-800/50 rounded-md text-sm text-indigo-300 transition-colors"
+              {/* Audio Controls */}
+              <div className="mt-4 flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <Button 
+                  variant={isAudioEnabled && isSoundscapePlaying ? "default" : "outline"} 
+                  size="icon"
+                  onClick={handleToggleAudio}
                 >
-                  Generate AI Narration
-                </button>
-              )}
+                  {isAudioEnabled && isSoundscapePlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Music className="h-4 w-4" />
+                  )}
+                </Button>
+                
+                <Button 
+                  variant={isNarrating ? "default" : "outline"}
+                  size="icon"
+                  onClick={handleNarration}
+                  disabled={!galleryItem.poeticSummary && !galleryItem.transcriptionText}
+                >
+                  {isNarrating ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <MessageSquare className="h-4 w-4" />
+                  )}
+                </Button>
+                
+                <div className="flex items-center gap-2 flex-1">
+                  {audioVolume === 0 ? (
+                    <VolumeX className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <Volume2 className="h-4 w-4 text-gray-500" />
+                  )}
+                  
+                  <Slider
+                    defaultValue={[0.5]}
+                    max={1}
+                    step={0.01}
+                    value={[audioVolume]}
+                    onValueChange={handleVolumeChange}
+                    className="w-full max-w-xs"
+                  />
+                </div>
+              </div>
             </div>
-          )}
-          
-          {/* Original Transcript Toggle */}
-          <div className="p-4 border-b border-gray-800">
-            <button 
-              onClick={() => setShowTranscript(!showTranscript)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-gray-800/50 rounded-md hover:bg-gray-800 transition-colors"
-            >
-              <div className="flex items-center">
-                <MessageSquare className="h-4 w-4 mr-2 text-gray-400" />
-                <span className="text-sm">Original Transcript</span>
-              </div>
-              <span className="text-xs text-gray-400">
-                {showTranscript ? 'Hide' : 'Show'}
-              </span>
-            </button>
             
-            {showTranscript && !isLoading && visualization?.transcriptionText && (
-              <div className="mt-3 p-3 bg-gray-800/30 rounded-md border border-gray-700">
-                <p className="text-sm text-gray-300">{visualization.transcriptionText}</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Soundscape info */}
-          <div className="p-4 border-b border-gray-800">
-            <h3 className="text-sm font-medium mb-2 flex items-center">
-              <Music className="h-4 w-4 mr-2 text-gray-400" />
-              <span>Soundscape</span>
-            </h3>
-            
-            <div className="flex flex-wrap gap-2 text-xs">
-              <div className="px-3 py-1 bg-gray-800 rounded-full">
-                Current: <span className="font-medium text-indigo-300 capitalize">{currentSoundscape}</span>
-              </div>
+            {/* Details panel */}
+            <div className="lg:w-1/3">
+              <Card>
+                <CardContent className="p-6 space-y-6">
+                  {galleryItem.description && (
+                    <div>
+                      <h3 className="font-semibold mb-2 text-sm uppercase text-gray-500">Description</h3>
+                      <p>{galleryItem.description}</p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2 text-sm uppercase text-gray-500">Sentiment</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{getSentimentEmoji(galleryItem.sentiment)}</span>
+                      <span>{getSentimentDescription(galleryItem.sentiment)}</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2 text-sm uppercase text-gray-500">Created</h3>
+                    <p>{formatDate(galleryItem.createdAt)}</p>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <button
-                onClick={() => setShowSoundSettings(!showSoundSettings)}
-                className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
-              >
-                <Settings className="h-3 w-3 inline-block mr-1" />
-                Change
-              </button>
+              <Tabs defaultValue="poetic-summary" className="mt-6">
+                <TabsList className="w-full">
+                  {galleryItem.poeticSummary && (
+                    <TabsTrigger value="poetic-summary">Poetic Summary</TabsTrigger>
+                  )}
+                  <TabsTrigger value="transcription">Transcription</TabsTrigger>
+                </TabsList>
+                
+                {galleryItem.poeticSummary && (
+                  <TabsContent value="poetic-summary" className="mt-4">
+                    <Card>
+                      <CardContent className="p-6">
+                        <blockquote className="italic border-l-4 border-primary/50 pl-4 py-2">
+                          "{galleryItem.poeticSummary}"
+                        </blockquote>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                )}
+                
+                <TabsContent value="transcription" className="mt-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p>{galleryItem.transcriptionText}</p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
-          </div>
-          
-          {/* Playback info */}
-          <div className="mt-auto p-4 text-center border-t border-gray-800">
-            <p className="text-xs text-gray-500">
-              This is a saved visualization. Explore with different soundscapes and listen to the AI narration.
-            </p>
           </div>
         </div>
       </main>
       
-      {/* Social Share Modal */}
-      {visualization && (
+      {/* Share Modal */}
+      {isShareModalOpen && galleryItem && (
         <SocialShareModal
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
-          imageUrl={visualization.imageData}
-          title={visualization.title}
-          description={visualization.description || undefined}
-          poeticSummary={visualization.poeticSummary}
+          imageUrl={galleryItem.imageData}
+          title={galleryItem.title}
+          description={galleryItem.description || undefined}
+          poeticSummary={galleryItem.poeticSummary}
         />
       )}
     </div>
   );
-};
-
-export default GalleryItem;
+}

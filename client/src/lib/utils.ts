@@ -18,17 +18,12 @@ export function downloadFile(data: string, filename: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 100); // Delay to ensure download begins
 }
 
-// Function to download canvas as image with timestamp
-export function downloadCanvasAsImage(canvas: HTMLCanvasElement, filename: string = "vocal-earth-landscape.png") {
+// Function to download an image from a data URL
+export function downloadImage(dataUrl: string, filename: string = "vocal-earth-landscape") {
   try {
-    // Create high-quality image from canvas
-    const dataUrl = canvas.toDataURL("image/png", 1.0);
-    
     // Add timestamp to filename for uniqueness
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-    const parts = filename.split('.');
-    const extension = parts.pop() || 'png';
-    const nameWithTimestamp = `${parts.join('.')}-${timestamp}.${extension}`;
+    const nameWithTimestamp = `${filename}-${timestamp}.png`;
     
     // Create and trigger download link
     const link = document.createElement("a");
@@ -44,6 +39,18 @@ export function downloadCanvasAsImage(canvas: HTMLCanvasElement, filename: strin
     }, 100);
     
     return true;
+  } catch (error) {
+    console.error("Error downloading image:", error);
+    throw new Error("Failed to download image");
+  }
+}
+
+// Function to download canvas as image with timestamp
+export function downloadCanvasAsImage(canvas: HTMLCanvasElement, filename: string = "vocal-earth-landscape") {
+  try {
+    // Create high-quality image from canvas
+    const dataUrl = canvas.toDataURL("image/png", 1.0);
+    return downloadImage(dataUrl, filename);
   } catch (error) {
     console.error("Error downloading canvas:", error);
     throw new Error("Failed to download image");
@@ -168,25 +175,15 @@ export function getSentimentColorClass(sentiment: "Negative" | "Neutral" | "Posi
 }
 
 // Get sentiment emoji for visual indicators
-export function getSentimentEmoji(sentiment: "Negative" | "Neutral" | "Positive"): string {
-  switch (sentiment) {
-    case "Negative":
-      return "⚡"; // Lightning bolt for negative/stormy
-    case "Positive":
-      return "✨"; // Sparkles for positive/bright
-    case "Neutral":
-      return "💫"; // Dizzy for neutral/mysterious
-  }
+export function getSentimentEmoji(sentiment: "Negative" | "Neutral" | "Positive" | string): string {
+  if (sentiment === "Negative") return "😔";
+  if (sentiment === "Positive") return "😊";
+  return "😐"; // Neutral or unknown
 }
 
 // Get descriptive text for sentiment
-export function getSentimentDescription(sentiment: "Negative" | "Neutral" | "Positive"): string {
-  switch (sentiment) {
-    case "Negative":
-      return "A stormy, intense landscape emerges";
-    case "Positive":
-      return "A vibrant, luminous world unfolds";
-    case "Neutral":
-      return "A mysterious, balanced realm appears";
-  }
+export function getSentimentDescription(sentiment: "Negative" | "Neutral" | "Positive" | string): string {
+  if (sentiment === "Negative") return "Negative / Somber";
+  if (sentiment === "Positive") return "Positive / Joyful";
+  return "Neutral / Balanced"; // Neutral or unknown
 }
