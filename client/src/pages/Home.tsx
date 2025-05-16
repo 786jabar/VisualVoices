@@ -13,6 +13,7 @@ import SocialShareModal from '@/components/SocialShareModal';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useToneAudio } from '@/hooks/useToneAudio';
+import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 
 export default function Home() {
   const { toast } = useToast();
@@ -50,7 +51,10 @@ export default function Home() {
   // Sentiment analysis hook
   const { sentiment, score: sentimentScore, error: sentimentError } = useSentimentAnalysis(transcript);
   
-  // Audio hook
+  // Use audio coordinator to prevent conflicts with gallery audio
+  const { isActive: isAudioApproved, requestPlayback, stopPlayback } = useAudioCoordinator('home-dashboard');
+  
+  // Audio hook for tone generation
   const { 
     initialize: initializeAudio, 
     isInitialized: isAudioInitialized,
@@ -59,7 +63,7 @@ export default function Home() {
   } = useToneAudio({
     sentiment,
     sentimentScore,
-    isActive: settings.audioEnabled,
+    isActive: settings.audioEnabled && isAudioApproved,
     volume: settings.audioVolume
   });
   
@@ -189,20 +193,54 @@ export default function Home() {
     }
   };
   
-  // Handle toggle audio
-  const handleToggleAudio = () => {
-    if (!isAudioInitialized) {
-      initializeAudio().then(() => {
-        setSettings({...settings, audioEnabled: true});
-      }).catch(error => {
-        toast({
-          title: 'Audio Error',
-          description: 'Failed to initialize audio',
-          variant: 'destructive'
-        });
-      });
+  // Handle toggle audio with global coordination
+  const handleToggleAudio = async () => {
+    if (settings.audioEnabled) {
+      // Turn off audio
+      setSettings({...settings, audioEnabled: false});
+      
+      // Release global audio lock
+      stopPlayback();
+      
+      // Toggle audio if necessary
+      if (isAudioInitialized && isAudioPlaying) {
+        try {
+          await toggleAudio();
+        } catch (error) {
+          console.error('Error stopping audio:', error);
+        }
+      }
     } else {
-      setSettings({...settings, audioEnabled: !settings.audioEnabled});
+      // Request global audio permission
+      const granted = requestPlayback();
+      
+      if (granted) {
+        if (!isAudioInitialized) {
+          // Initialize audio if not already done
+          try {
+            await initializeAudio();
+            setSettings({...settings, audioEnabled: true});
+          } catch (error) {
+            toast({
+              title: 'Audio Error',
+              description: 'Failed to initialize audio',
+              variant: 'destructive'
+            });
+          }
+        } else {
+          // Toggle audio state
+          setSettings({...settings, audioEnabled: true});
+          
+          // Start audio if it's not playing
+          if (!isAudioPlaying) {
+            try {
+              await toggleAudio();
+            } catch (error) {
+              console.error('Error starting audio:', error);
+            }
+          }
+        }
+      }
     }
   };
   
