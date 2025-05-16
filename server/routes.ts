@@ -89,6 +89,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // New endpoint for generating narration for the AI assistant
+  app.post("/api/generate-narration", async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const result = summaryRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid request body", errors: result.error.errors });
+      }
+
+      const { transcription } = req.body as GenerateSummaryRequest;
+
+      // Ensure the DeepSeek API key is set
+      const apiKey = process.env.DEEPSEEK_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "DeepSeek API key is not configured" });
+      }
+
+      // Call DeepSeek API to generate a more conversational narration
+      const response = await axios.post(
+        "https://api.deepseek.com/v1/chat/completions",
+        {
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content: "You are an AI landscape guide who explains surreal landscapes in a friendly, engaging voice. Your narration should be conversational, as if you're a tour guide explaining the landscape to the visitor. Keep your response under 150 words and use natural speech patterns suitable for text-to-speech. Make the listener feel like they're being guided through the landscape."
+            },
+            {
+              role: "user",
+              content: `Create a spoken narration for a surreal landscape guide explaining a world inspired by these words: "${transcription}"`
+            }
+          ],
+          max_tokens: 300
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          }
+        }
+      );
+
+      // Extract the narration from the response
+      const narration = response.data.choices[0]?.message?.content || 
+        "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice.";
+
+      // Return the generated narration
+      return res.status(200).json({ narration });
+    } catch (error) {
+      console.error("Error generating narration:", error);
+      return res.status(500).json({ 
+        message: "Failed to generate narration", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
 
   // GALLERY ROUTES
 

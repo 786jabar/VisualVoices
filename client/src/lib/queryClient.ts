@@ -102,3 +102,12 @@ export async function generatePoeticSummary(transcription: string): Promise<stri
   });
   return data.summary;
 }
+
+// Custom function to generate spoken narration for the AI assistant
+export async function generateNarration(transcription: string): Promise<string> {
+  const data = await apiRequest<{narration: string}>("/api/generate-narration", {
+    method: "POST",
+    body: { transcription }
+  });
+  return data.narration;
+}

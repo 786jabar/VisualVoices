@@ -1,4 +1,4 @@
-import { FC, useState, useRef } from 'react';
+import { FC, useState, useRef, useEffect } from 'react';
 import { Link } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,8 @@ import {
   getSentimentDescription 
 } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, generateNarration } from '@/lib/queryClient';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { 
   Mic, 
   StopCircle, 
@@ -20,7 +21,10 @@ import {
   Download, 
   Copy,
   Save,
-  Layers
+  Layers,
+  MessageSquare,
+  PlayCircle,
+  PauseCircle
 } from 'lucide-react';
 import {
   Tooltip,
@@ -82,6 +86,52 @@ const ControlPanel: FC<ControlPanelProps> = ({
   const [galleryItemTitle, setGalleryItemTitle] = useState('');
   const [galleryItemDescription, setGalleryItemDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  
+  // State for AI narration
+  const [narration, setNarration] = useState<string | null>(null);
+  const [isGeneratingNarration, setIsGeneratingNarration] = useState(false);
+  
+  // Speech synthesis for AI narration
+  const { 
+    speak, 
+    stop: stopSpeaking, 
+    isSpeaking, 
+    isPaused,
+    pause: pauseSpeaking,
+    resume: resumeSpeaking,
+    isSupported: isSpeechSynthesisSupported
+  } = useSpeechSynthesis({
+    rate: 0.9,
+    pitch: 1.0,
+    volume: 1.0
+  });
+  
+  // Generate narration when poetic summary is available
+  useEffect(() => {
+    if (poeticSummary && !narration && !isGeneratingNarration && transcription) {
+      generateAINarration();
+    }
+  }, [poeticSummary, narration, isGeneratingNarration, transcription]);
+  
+  // Function to generate AI narration
+  const generateAINarration = async () => {
+    if (!transcription || isGeneratingNarration) return;
+    
+    try {
+      setIsGeneratingNarration(true);
+      const generatedNarration = await generateNarration(transcription);
+      setNarration(generatedNarration);
+    } catch (error) {
+      console.error('Failed to generate narration:', error);
+      toast({
+        title: 'Narration Error',
+        description: 'Could not generate AI narration',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingNarration(false);
+    }
+  };
   
   // Helper function to determine status text and color
   const getStatusInfo = () => {
@@ -347,6 +397,103 @@ const ControlPanel: FC<ControlPanelProps> = ({
               </TooltipProvider>
             </div>
             <p className="text-sm italic text-gray-300">{poeticSummary}</p>
+          </div>
+        )}
+        
+        {/* AI Narration */}
+        {narration && (
+          <div className="rounded-lg bg-indigo-900/30 p-4 border border-indigo-800/40 mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium text-white flex items-center">
+                <MessageSquare className="h-4 w-4 mr-2 text-indigo-400" />
+                <span>AI Landscape Guide</span>
+              </h3>
+              <div className="flex space-x-1">
+                {/* Play/Pause button */}
+                {isSpeechSynthesisSupported && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 w-7 p-0"
+                          onClick={() => {
+                            if (isSpeaking) {
+                              if (isPaused) {
+                                resumeSpeaking();
+                              } else {
+                                pauseSpeaking();
+                              }
+                            } else {
+                              speak(narration);
+                            }
+                          }}
+                        >
+                          {isSpeaking ? (
+                            isPaused ? (
+                              <PlayCircle className="h-4 w-4 text-indigo-400" />
+                            ) : (
+                              <PauseCircle className="h-4 w-4 text-indigo-400" />
+                            )
+                          ) : (
+                            <PlayCircle className="h-4 w-4 text-indigo-400" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isSpeaking ? (isPaused ? "Resume narration" : "Pause narration") : "Play narration"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
+                {/* Copy button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 w-7 p-0"
+                        onClick={() => {
+                          if (narration) {
+                            navigator.clipboard.writeText(narration);
+                            toast({
+                              title: 'Copied!',
+                              description: 'Narration copied to clipboard',
+                            });
+                          }
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5 text-gray-400" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy narration</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+            
+            <p className="text-sm text-indigo-200">{narration}</p>
+            
+            {!isSpeechSynthesisSupported && (
+              <p className="text-xs text-indigo-400 mt-2">
+                Note: Your browser doesn't support speech synthesis. You can still read the narration.
+              </p>
+            )}
+          </div>
+        )}
+        
+        {/* Narration loading */}
+        {isGeneratingNarration && !narration && (
+          <div className="rounded-lg bg-indigo-900/30 p-4 border border-indigo-800/40 mb-4 flex items-center">
+            <div className="animate-spin mr-3">
+              <MessageSquare className="h-4 w-4 text-indigo-400" />
+            </div>
+            <span className="text-sm text-indigo-200">Generating AI landscape narration...</span>
           </div>
         )}
         

@@ -10,16 +10,30 @@ import {
   Sparkles,
   Volume2,
   VolumeX,
-  MessageSquare
+  MessageSquare,
+  Music,
+  PlayCircle,
+  PauseCircle,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, generateNarration } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useP5Visualization } from '@/hooks/useP5Visualization';
 import { useToneAudio } from '@/hooks/useToneAudio';
+import { useMultipleSoundscapes, SoundscapeType } from '@/hooks/useMultipleSoundscapes';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { getSentimentEmoji, getSentimentDescription } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 // Define interface for visualization item
 interface Visualization {
@@ -47,6 +61,15 @@ const GalleryItem: FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
+  
+  // Soundscape settings
+  const [currentSoundscape, setCurrentSoundscape] = useState<SoundscapeType>('peaceful');
+  const [audioVolume, setAudioVolume] = useState(0.6);
+  
+  // AI narration state
+  const [narration, setNarration] = useState<string | null>(null);
+  const [isGeneratingNarration, setIsGeneratingNarration] = useState(false);
   
   // Fetch visualization data
   const { 
@@ -69,38 +92,115 @@ const GalleryItem: FC = () => {
     motion: visualization?.visualSettings?.motion || true
   });
   
-  // Initialize audio
+  // Initialize multiple soundscapes
   const { 
-    initialize: initializeAudio, 
-    isInitialized: isAudioInitialized,
-    isPlaying: isAudioPlaying,
-    togglePlay: toggleAudio 
-  } = useToneAudio({
-    sentiment: visualization?.sentiment || 'Neutral',
-    sentimentScore: visualization?.sentimentScore || 0,
+    isPlaying: isSoundscapePlaying,
+    isInitialized: isSoundscapeInitialized,
+    currentSoundscape: activeSoundscape,
+    changeSoundscape,
+    togglePlay: toggleSoundscape,
+    setVolume: setSoundscapeVolume,
+    initialize: initializeSoundscapes
+  } = useMultipleSoundscapes({
+    initialType: currentSoundscape,
     isActive: isAudioEnabled,
-    volume: 0.6
+    volume: audioVolume
   });
+  
+  // Speech synthesis for narration
+  const { 
+    speak, 
+    stop: stopSpeaking, 
+    isSpeaking, 
+    isPaused,
+    pause: pauseSpeaking,
+    resume: resumeSpeaking,
+    isSupported: isSpeechSynthesisSupported
+  } = useSpeechSynthesis({
+    rate: 0.9,
+    pitch: 1.0,
+    volume: 1.0
+  });
+  
+  // Generate AI narration for the landscape
+  const generateAINarration = async () => {
+    if (!visualization?.transcriptionText || isGeneratingNarration) return;
+    
+    try {
+      setIsGeneratingNarration(true);
+      const generatedNarration = await generateNarration(visualization.transcriptionText);
+      setNarration(generatedNarration);
+    } catch (error) {
+      console.error('Failed to generate narration:', error);
+      toast({
+        title: 'Narration Error',
+        description: 'Could not generate AI narration',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingNarration(false);
+    }
+  };
   
   // Initialize audio when component mounts
   useEffect(() => {
     const initAudio = async () => {
       try {
-        await initializeAudio();
+        await initializeSoundscapes();
+        
+        // Set initial soundscape based on sentiment
+        if (visualization) {
+          let soundscapeType: SoundscapeType;
+          
+          switch(visualization.sentiment) {
+            case 'Positive':
+              soundscapeType = visualization.sentimentScore > 0.5 ? 'cheerful' : 'peaceful';
+              break;
+            case 'Negative':
+              soundscapeType = visualization.sentimentScore < -0.5 ? 'dramatic' : 'melancholic';
+              break;
+            default:
+              soundscapeType = 'mysterious';
+          }
+          
+          setCurrentSoundscape(soundscapeType);
+          changeSoundscape(soundscapeType);
+        }
       } catch (error) {
         console.error('Failed to initialize audio:', error);
       }
     };
     
     initAudio();
-  }, [initializeAudio]);
+  }, [initializeSoundscapes, visualization, changeSoundscape]);
+  
+  // Generate narration when visualization data loads
+  useEffect(() => {
+    if (visualization && !narration && !isGeneratingNarration) {
+      generateAINarration();
+    }
+  }, [visualization, narration, isGeneratingNarration]);
   
   // Toggle audio playback
-  const handleToggleAudio = () => {
+  const handleToggleAudio = async () => {
     setIsAudioEnabled(!isAudioEnabled);
-    if (isAudioInitialized) {
-      toggleAudio();
+    if (isSoundscapeInitialized) {
+      await toggleSoundscape();
     }
+  };
+  
+  // Handle soundscape change
+  const handleChangeSoundscape = (value: string) => {
+    const newSoundscape = value as SoundscapeType;
+    setCurrentSoundscape(newSoundscape);
+    changeSoundscape(newSoundscape);
+  };
+  
+  // Handle volume change
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0];
+    setAudioVolume(newVolume);
+    setSoundscapeVolume(newVolume);
   };
   
   // Format date for display
@@ -188,11 +288,13 @@ const GalleryItem: FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Audio toggle */}
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleToggleAudio}
             className="text-gray-400 hover:text-white"
+            title={isAudioEnabled ? "Mute audio" : "Enable audio"}
           >
             {isAudioEnabled ? (
               <Volume2 className="h-5 w-5" />
@@ -201,20 +303,35 @@ const GalleryItem: FC = () => {
             )}
           </Button>
           
+          {/* Sound settings */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setShowSoundSettings(!showSoundSettings)}
+            className={`text-gray-400 hover:text-white ${showSoundSettings ? 'bg-gray-800' : ''}`}
+            title="Sound settings"
+          >
+            <Music className="h-5 w-5" />
+          </Button>
+          
+          {/* Share button */}
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleShare}
             className="text-gray-400 hover:text-white"
+            title="Share"
           >
             <Share2 className="h-5 w-5" />
           </Button>
           
+          {/* Download button */}
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleDownload}
             className="text-gray-400 hover:text-white"
+            title="Download"
           >
             <Download className="h-5 w-5" />
           </Button>
