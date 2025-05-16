@@ -213,11 +213,14 @@ export default function Home() {
           onStopSpeaking={handleStopSpeaking}
           transcription={transcript}
           sentiment={sentiment}
+          sentimentScore={sentimentScore}
           poeticSummary={poeticSummary}
           isProcessingSummary={summaryMutation.isPending}
           onSaveImage={handleSaveImage}
           isAudioEnabled={settings.audioEnabled}
           onToggleAudio={handleToggleAudio}
+          colorIntensity={settings.colorIntensity}
+          motion={settings.motionEffects}
         />
       </main>
       

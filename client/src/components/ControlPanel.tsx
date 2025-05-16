@@ -1,4 +1,6 @@
-import { FC, useState } from 'react';
+import { FC, useState, useRef } from 'react';
+import { Link } from 'wouter';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { 
   cn, 
@@ -7,6 +9,7 @@ import {
   getSentimentDescription 
 } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Mic, 
   StopCircle, 
@@ -15,7 +18,9 @@ import {
   VolumeX, 
   Share2, 
   Download, 
-  Copy 
+  Copy,
+  Save,
+  Layers
 } from 'lucide-react';
 import {
   Tooltip,
@@ -23,6 +28,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 interface ControlPanelProps {
   isListening: boolean;
@@ -30,26 +48,40 @@ interface ControlPanelProps {
   onStopSpeaking: () => void;
   transcription: string;
   sentiment: 'Negative' | 'Neutral' | 'Positive';
+  sentimentScore: number;
   poeticSummary: string | null;
   isProcessingSummary: boolean;
   onSaveImage: () => void;
   isAudioEnabled: boolean;
   onToggleAudio: () => void;
+  colorIntensity: boolean;
+  motion: boolean;
 }
 
+// Add sentimentScore, colorIntensity, and motion to props
 const ControlPanel: FC<ControlPanelProps> = ({
   isListening,
   onStartSpeaking,
   onStopSpeaking,
   transcription,
   sentiment,
+  sentimentScore,
   poeticSummary,
   isProcessingSummary,
   onSaveImage,
   isAudioEnabled,
-  onToggleAudio
+  onToggleAudio,
+  colorIntensity,
+  motion
 }) => {
   const { toast } = useToast();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  
+  // Form state for saving to gallery
+  const [galleryItemTitle, setGalleryItemTitle] = useState('');
+  const [galleryItemDescription, setGalleryItemDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   
   // Helper function to determine status text and color
   const getStatusInfo = () => {
@@ -81,6 +113,43 @@ const ControlPanel: FC<ControlPanelProps> = ({
   };
   
   const statusInfo = getStatusInfo();
+  
+  // Save to gallery mutation
+  const saveToGalleryMutation = useMutation({
+    mutationFn: async (imageData: string) => {
+      return apiRequest('/api/gallery', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: galleryItemTitle || `VocalEarth Creation - ${new Date().toLocaleDateString()}`,
+          description: galleryItemDescription || null,
+          transcriptionText: transcription,
+          sentiment,
+          sentimentScore,
+          poeticSummary,
+          imageData,
+          visualSettings: {
+            colorIntensity,
+            motion
+          },
+          isPublic
+        })
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Saved to Gallery',
+        description: 'Your visualization has been saved to your gallery.',
+      });
+      setSaveDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error Saving',
+        description: error instanceof Error ? error.message : 'Failed to save to gallery',
+        variant: 'destructive'
+      });
+    }
+  });
   
   // Handle share functionality
   const handleShare = () => {
@@ -122,6 +191,37 @@ const ControlPanel: FC<ControlPanelProps> = ({
       });
     }
   };
+  
+  // Handle saving to gallery
+  const handleSaveToGallery = () => {
+    // Find the canvas element - we'll need its image data
+    const canvas = document.querySelector('canvas');
+    if (!canvas) {
+      toast({
+        title: 'Error',
+        description: 'Canvas not found',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      // Get image data from canvas
+      const imageData = canvas.toDataURL('image/png');
+      
+      // Save to gallery
+      saveToGalleryMutation.mutate(imageData);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save visualization',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Check if we can show save dialog
+  const canSaveToGallery = !!transcription && !isListening && !isProcessingSummary;
   
   return (
     <section className="bg-gray-900/90 backdrop-blur-sm border-l border-gray-800 w-full md:w-96 flex flex-col overflow-hidden">
@@ -249,35 +349,134 @@ const ControlPanel: FC<ControlPanelProps> = ({
             <p className="text-sm italic text-gray-300">{poeticSummary}</p>
           </div>
         )}
+        
+        {/* Gallery Link (if there's content) */}
+        {transcription && (
+          <Link href="/gallery">
+            <div className="rounded-lg bg-indigo-900/30 border border-indigo-800/40 p-3 mb-4 flex items-center justify-between hover:bg-indigo-900/40 transition-colors cursor-pointer">
+              <div className="flex items-center">
+                <Layers className="h-4 w-4 mr-2 text-indigo-400" />
+                <span className="text-sm text-indigo-300">View your gallery</span>
+              </div>
+              <span className="text-xs text-indigo-400">→</span>
+            </div>
+          </Link>
+        )}
       </div>
       
       {/* Action Buttons */}
       <div className="p-4 border-t border-gray-800 bg-gray-900/70">
         <div className="grid grid-cols-3 gap-2">
+          {/* Save to Gallery Dialog */}
+          <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-indigo-700 hover:bg-indigo-600 text-white col-span-2 py-2 flex items-center justify-center"
+                disabled={!canSaveToGallery}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                <span>Save to Gallery</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border border-gray-700 text-white">
+              <DialogHeader>
+                <DialogTitle>Save to Gallery</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Save your vocal landscape to revisit and share later.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="title" className="text-right">
+                    Title
+                  </Label>
+                  <Input
+                    id="title"
+                    value={galleryItemTitle}
+                    onChange={(e) => setGalleryItemTitle(e.target.value)}
+                    placeholder="My Vocal Landscape"
+                    className="col-span-3 bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={galleryItemDescription}
+                    onChange={(e) => setGalleryItemDescription(e.target.value)}
+                    placeholder="Optional description..."
+                    className="col-span-3 bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="public" className="text-right">
+                    Public
+                  </Label>
+                  <div className="flex items-center space-x-2 col-span-3">
+                    <Switch
+                      id="public"
+                      checked={isPublic}
+                      onCheckedChange={setIsPublic}
+                    />
+                    <span className="text-sm text-gray-400">
+                      {isPublic ? "Visible to everyone" : "Only visible to you"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSaveDialogOpen(false)} className="border-gray-700 text-gray-300">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveToGallery}
+                  className="bg-indigo-700 hover:bg-indigo-600 text-white"
+                  disabled={saveToGalleryMutation.isPending}
+                >
+                  {saveToGalleryMutation.isPending ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>Save</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Download Image Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  className="bg-indigo-700 hover:bg-indigo-600 text-white col-span-2 py-2 flex items-center justify-center"
+                  className="bg-indigo-700 hover:bg-indigo-600 text-white"
                   onClick={onSaveImage}
+                  disabled={!transcription}
                 >
-                  <Camera className="h-4 w-4 mr-2" />
-                  <span>Save Landscape</span>
+                  <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Download this landscape as an image</p>
+                <p>Download image to your device</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           
+          {/* Share Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  className="bg-indigo-700 hover:bg-indigo-600 text-white py-2 px-3"
+                  className="bg-indigo-700 hover:bg-indigo-600 text-white"
                   onClick={handleShare}
                   aria-label="Share"
+                  disabled={!transcription}
                 >
                   <Share2 className="h-4 w-4" />
                 </Button>
