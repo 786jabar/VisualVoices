@@ -16,6 +16,7 @@ import {
   PauseCircle,
   Settings
 } from 'lucide-react';
+import SocialShareModal from '@/components/SocialShareModal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { apiRequest, generateNarration } from '@/lib/queryClient';

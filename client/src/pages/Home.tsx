@@ -8,6 +8,7 @@ import VisualizationCanvas from '@/components/VisualizationCanvas';
 import ControlPanel from '@/components/ControlPanel';
 import HelpModal from '@/components/HelpModal';
 import SettingsModal from '@/components/SettingsModal';
+import EmotionTracker from '@/components/EmotionTracker';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useToneAudio } from '@/hooks/useToneAudio';
