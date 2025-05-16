@@ -87,51 +87,92 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
     }
   }, [isInitialized, options.initialType, options.isActive, options.volume]);
   
-  // Initialize soundscape based on type
+  // Initialize soundscape based on type with improved performance and error handling
   const initializeSoundscape = useCallback((
     type: SoundscapeType, 
     synthInst: Tone.PolySynth, 
     noiseInst: Tone.NoiseSynth
   ) => {
-    // Clear existing loops
-    if (mainLoop) {
-      mainLoop.dispose();
-      setMainLoop(null);
+    // First stop transport to ensure clean state
+    if (Tone.Transport.state === 'started') {
+      Tone.Transport.stop();
     }
+    
+    // Clear existing loops with proper error handling
+    if (mainLoop) {
+      try {
+        mainLoop.stop();
+        mainLoop.dispose();
+        setMainLoop(null);
+      } catch (e) {
+        console.error("Error disposing main loop:", e);
+      }
+    }
+    
     if (ambienceLoop) {
-      ambienceLoop.dispose();
-      setAmbienceLoop(null);
+      try {
+        ambienceLoop.stop();
+        ambienceLoop.dispose();
+        setAmbienceLoop(null);
+      } catch (e) {
+        console.error("Error disposing ambience loop:", e);
+      }
+    }
+    
+    // Make sure we release any held notes
+    try {
+      if (synthInst) {
+        synthInst.releaseAll();
+      }
+    } catch (e) {
+      console.error("Error releasing synth notes:", e);
     }
     
     let newMainLoop: Tone.Loop;
     let newAmbienceLoop: Tone.Loop;
     
-    // Create loops based on soundscape type
+    // Create loops based on soundscape type with better error handling
     switch (type) {
-      case 'peaceful':
-        // Peaceful soundscape - gentle arpeggios and soft ambient noise
-        newMainLoop = new Tone.Loop((time) => {
-          const notes = ['C4', 'E4', 'G4', 'B4', 'D5'];
-          const randomNote = notes[Math.floor(Math.random() * notes.length)];
-          synthInst.triggerAttackRelease(randomNote, '8n', time, 0.2);
-        }, '4n');
-        
-        newAmbienceLoop = new Tone.Loop((time) => {
-          noiseInst.triggerAttackRelease('8n', time, 0.02);
-        }, '4n');
-        break;
+          case 'peaceful':
+            // Peaceful soundscape - gentle arpeggios and soft ambient noise
+            newMainLoop = new Tone.Loop((time) => {
+              try {
+                const notes = ['C4', 'E4', 'G4', 'B4', 'D5'];
+                const randomNote = notes[Math.floor(Math.random() * notes.length)];
+                synthInst.triggerAttackRelease(randomNote, '8n', time, 0.2);
+              } catch (e) {
+                console.error("Error in peaceful main loop:", e);
+              }
+            }, '4n');
+            
+            newAmbienceLoop = new Tone.Loop((time) => {
+              try {
+                noiseInst.triggerAttackRelease('8n', time, 0.02);
+              } catch (e) {
+                console.error("Error in peaceful ambience loop:", e);
+              }
+            }, '4n');
+            break;
         
       case 'mysterious':
         // Mysterious soundscape - dissonant intervals and sparse textures
         newMainLoop = new Tone.Loop((time) => {
-          const notes = ['D#3', 'G3', 'A#3', 'C4', 'F#4'];
-          const randomNote = notes[Math.floor(Math.random() * notes.length)];
-          synthInst.triggerAttackRelease(randomNote, '8n', time, 0.15);
+          try {
+            const notes = ['D#3', 'G3', 'A#3', 'C4', 'F#4'];
+            const randomNote = notes[Math.floor(Math.random() * notes.length)];
+            synthInst.triggerAttackRelease(randomNote, '8n', time, 0.15);
+          } catch (e) {
+            console.error("Error in mysterious main loop:", e);
+          }
         }, '4n');
         
         newAmbienceLoop = new Tone.Loop((time) => {
-          if (Math.random() > 0.7) {
-            noiseInst.triggerAttackRelease('16n', time, 0.05);
+          try {
+            if (Math.random() > 0.7) {
+              noiseInst.triggerAttackRelease('16n', time, 0.05);
+            }
+          } catch (e) {
+            console.error("Error in mysterious ambience loop:", e);
           }
         }, '8n');
         break;
@@ -195,13 +236,20 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
         break;
     }
     
-    // Start loops
-    newMainLoop.start(0);
-    newAmbienceLoop.start(0);
-    
-    setMainLoop(newMainLoop);
-    setAmbienceLoop(newAmbienceLoop);
-    
+    // Start loops with proper error handling
+    try {
+      if (newMainLoop) {
+        newMainLoop.start(0);
+        setMainLoop(newMainLoop);
+      }
+      
+      if (newAmbienceLoop) {
+        newAmbienceLoop.start(0);
+        setAmbienceLoop(newAmbienceLoop);
+      }
+    } catch (e) {
+      console.error("Error starting audio loops:", e);
+    }
   }, [mainLoop, ambienceLoop]);
   
   // Change soundscape type
@@ -212,21 +260,68 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
     initializeSoundscape(type, synth, noiseSynth);
   }, [isInitialized, synth, noiseSynth, initializeSoundscape]);
   
-  // Toggle play/pause
+  // Toggle play/pause with comprehensive error handling
   const togglePlay = useCallback(async () => {
-    if (!isInitialized) {
-      await initialize();
-      return;
+    try {
+      // If not initialized, do that first
+      if (!isInitialized) {
+        await initialize();
+        // Wait a moment for initialization to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (isPlaying) {
+        // First, cleanup and release any held notes
+        if (synth) {
+          try {
+            synth.releaseAll();
+          } catch (e) {
+            console.error("Error releasing synth notes:", e);
+          }
+        }
+        
+        // Try to pause transport gracefully
+        try {
+          Tone.Transport.pause();
+        } catch (e) {
+          console.error("Error pausing Tone.js transport:", e);
+          // Force stop as fallback
+          Tone.Transport.stop();
+        }
+        
+        // Update state
+        setIsPlaying(false);
+      } else {
+        // First, make sure audio context is running
+        try {
+          await Tone.start();
+          
+          if (Tone.context.state !== 'running') {
+            await Tone.context.resume();
+          }
+        } catch (e) {
+          console.error("Error starting Tone.js context:", e);
+        }
+        
+        // Ensure transport is in a fresh state
+        if (Tone.Transport.state === 'started') {
+          Tone.Transport.stop();
+          // Small delay to ensure clean restart
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        // Start transport with proper error handling
+        try {
+          Tone.Transport.start("+0.1");
+          setIsPlaying(true);
+        } catch (e) {
+          console.error("Error starting Tone.js transport:", e);
+        }
+      }
+    } catch (error) {
+      console.error("Critical audio system error:", error);
     }
-    
-    if (isPlaying) {
-      Tone.Transport.pause();
-    } else {
-      Tone.Transport.start();
-    }
-    
-    setIsPlaying(!isPlaying);
-  }, [isInitialized, isPlaying, initialize]);
+  }, [isInitialized, isPlaying, initialize, synth]);
   
   // Set volume
   const setVolume = useCallback((volumeLevel: number) => {
