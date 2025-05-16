@@ -338,6 +338,49 @@ const GalleryItem: FC = () => {
         </div>
       </header>
       
+      {/* Sound settings panel (conditionally shown) */}
+      {showSoundSettings && (
+        <div className="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-6 flex-1">
+            <div className="flex flex-col gap-1 w-64">
+              <label className="text-sm text-gray-300 mb-1">Soundscape Type</label>
+              <Select value={currentSoundscape} onValueChange={handleChangeSoundscape}>
+                <SelectTrigger className="w-full bg-gray-800 border-gray-700">
+                  <SelectValue placeholder="Select soundscape" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="peaceful" className="text-gray-200">Peaceful</SelectItem>
+                  <SelectItem value="mysterious" className="text-gray-200">Mysterious</SelectItem>
+                  <SelectItem value="dramatic" className="text-gray-200">Dramatic</SelectItem>
+                  <SelectItem value="cheerful" className="text-gray-200">Cheerful</SelectItem>
+                  <SelectItem value="melancholic" className="text-gray-200">Melancholic</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col gap-1 flex-1 max-w-sm">
+              <label className="text-sm text-gray-300 mb-1">Volume</label>
+              <Slider 
+                defaultValue={[audioVolume]} 
+                max={1} 
+                step={0.01} 
+                onValueChange={handleVolumeChange}
+                className="py-2" 
+              />
+            </div>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowSoundSettings(false)} 
+            className="text-gray-400 hover:text-white"
+          >
+            Close
+          </Button>
+        </div>
+      )}
+      
       {/* Main content */}
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Visualization Canvas */}
@@ -357,6 +400,54 @@ const GalleryItem: FC = () => {
                 <span>{getSentimentEmoji(visualization.sentiment)}</span>
                 <span>{getSentimentDescription(visualization.sentiment)}</span>
               </div>
+            </div>
+          )}
+          
+          {/* Narration controls */}
+          {narration && (
+            <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-64 bg-gray-900/80 backdrop-blur-sm rounded-lg p-3 text-white border border-gray-800 transition-all duration-300 z-10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium flex items-center">
+                  <MessageSquare className="h-3 w-3 mr-2 text-indigo-400" />
+                  AI Landscape Guide
+                </span>
+                
+                {isSpeechSynthesisSupported && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0"
+                    onClick={() => {
+                      if (isSpeaking) {
+                        if (isPaused) {
+                          resumeSpeaking();
+                        } else {
+                          pauseSpeaking();
+                        }
+                      } else {
+                        speak(narration);
+                      }
+                    }}
+                  >
+                    {isSpeaking ? (
+                      isPaused ? (
+                        <PlayCircle className="h-4 w-4 text-indigo-400" />
+                      ) : (
+                        <PauseCircle className="h-4 w-4 text-indigo-400" />
+                      )
+                    ) : (
+                      <PlayCircle className="h-4 w-4 text-indigo-400" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              <p className="text-xs text-gray-300 line-clamp-3">
+                {narration.length > 120 
+                  ? narration.substring(0, 120) + '...' 
+                  : narration
+                }
+              </p>
             </div>
           )}
         </div>
@@ -402,7 +493,83 @@ const GalleryItem: FC = () => {
             </div>
           )}
           
-          {/* Transcript Toggle */}
+          {/* AI Narration Section */}
+          {!isLoading && (
+            <div className="p-4 border-b border-gray-800">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium flex items-center">
+                  <MessageSquare className="h-4 w-4 mr-2 text-indigo-400" />
+                  <span>AI Landscape Guide</span>
+                </h3>
+                
+                {narration && isSpeechSynthesisSupported && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-7 text-xs border-indigo-800 text-indigo-300 hover:bg-indigo-950"
+                    onClick={() => {
+                      if (isSpeaking) {
+                        if (isPaused) {
+                          resumeSpeaking();
+                        } else {
+                          pauseSpeaking();
+                        }
+                      } else {
+                        speak(narration);
+                      }
+                    }}
+                  >
+                    {isSpeaking ? (
+                      isPaused ? (
+                        <>
+                          <PlayCircle className="h-3 w-3 mr-1" />
+                          Resume
+                        </>
+                      ) : (
+                        <>
+                          <PauseCircle className="h-3 w-3 mr-1" />
+                          Pause
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <PlayCircle className="h-3 w-3 mr-1" />
+                        Speak
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              {isGeneratingNarration ? (
+                <div className="flex items-center space-x-3 p-3 bg-indigo-900/20 rounded-md">
+                  <div className="animate-spin">
+                    <MessageSquare className="h-4 w-4 text-indigo-400" />
+                  </div>
+                  <span className="text-sm text-indigo-200">Generating AI narration...</span>
+                </div>
+              ) : narration ? (
+                <div className="p-3 bg-indigo-900/20 rounded-md border border-indigo-900/30">
+                  <p className="text-sm text-indigo-100">{narration}</p>
+                  
+                  {!isSpeechSynthesisSupported && (
+                    <p className="text-xs text-indigo-400 mt-2">
+                      Note: Your browser doesn't support speech synthesis. You can still read the narration.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={generateAINarration}
+                  className="w-full py-2 bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-800/50 rounded-md text-sm text-indigo-300 transition-colors"
+                >
+                  Generate AI Narration
+                </button>
+              )}
+            </div>
+          )}
+          
+          {/* Original Transcript Toggle */}
           <div className="p-4 border-b border-gray-800">
             <button 
               onClick={() => setShowTranscript(!showTranscript)}
@@ -424,10 +591,32 @@ const GalleryItem: FC = () => {
             )}
           </div>
           
+          {/* Soundscape info */}
+          <div className="p-4 border-b border-gray-800">
+            <h3 className="text-sm font-medium mb-2 flex items-center">
+              <Music className="h-4 w-4 mr-2 text-gray-400" />
+              <span>Soundscape</span>
+            </h3>
+            
+            <div className="flex flex-wrap gap-2 text-xs">
+              <div className="px-3 py-1 bg-gray-800 rounded-full">
+                Current: <span className="font-medium text-indigo-300 capitalize">{currentSoundscape}</span>
+              </div>
+              
+              <button
+                onClick={() => setShowSoundSettings(!showSoundSettings)}
+                className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <Settings className="h-3 w-3 inline-block mr-1" />
+                Change
+              </button>
+            </div>
+          </div>
+          
           {/* Playback info */}
           <div className="mt-auto p-4 text-center border-t border-gray-800">
             <p className="text-xs text-gray-500">
-              This is a saved visualization. It captures a moment in time.
+              This is a saved visualization. Explore with different soundscapes and listen to the AI narration.
             </p>
           </div>
         </div>

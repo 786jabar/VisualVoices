@@ -83,20 +83,6 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
         Tone.Transport.start();
         setIsPlaying(true);
       }
-      
-      // Cleanup on component unmount
-      return () => {
-        if (mainLoop) mainLoop.dispose();
-        if (ambienceLoop) ambienceLoop.dispose();
-        newSynth.dispose();
-        newNoiseSynth.dispose();
-        newReverb.dispose();
-        newDelay.dispose();
-        newFilter.dispose();
-        newAutoFilter.dispose();
-        newVolume.dispose();
-        Tone.Transport.stop();
-      };
     } catch (error) {
       console.error('Failed to initialize audio:', error);
     }
