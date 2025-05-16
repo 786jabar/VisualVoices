@@ -49,8 +49,12 @@ const VisualizationCanvas: FC<VisualizationCanvasProps> = ({
 
   return (
     <section id="visualizationContainer" className="relative flex-1 bg-black overflow-hidden">
-      {/* P5.js Canvas Container */}
-      <div ref={canvasRef} className="absolute inset-0"></div>
+      {/* P5.js Canvas Container - ensure it takes full available space */}
+      <div 
+        ref={canvasRef} 
+        className="absolute inset-0 w-full h-full" 
+        style={{ display: 'block', position: 'absolute', width: '100%', height: '100%' }}
+      ></div>
       
       {/* Floating Info Badge - shows when visualization is active but not processing */}
       {text && !isProcessing && (

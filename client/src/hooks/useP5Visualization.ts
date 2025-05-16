@@ -94,9 +94,18 @@ export function useP5Visualization(options: VisualizationOptions): P5Visualizati
 
       // Setup function
       p.setup = () => {
-        // Create canvas with container dimensions
-        const canvas = p.createCanvas(canvasRef.current!.clientWidth, canvasRef.current!.clientHeight);
+        // Ensure we have proper dimensions
+        const containerWidth = canvasRef.current!.clientWidth || window.innerWidth;
+        const containerHeight = canvasRef.current!.clientHeight || window.innerHeight;
+        
+        // Create canvas that fills the container completely
+        const canvas = p.createCanvas(containerWidth, containerHeight);
         canvas.parent(canvasRef.current!);
+        
+        // Set CSS to ensure canvas is displayed properly and fully
+        canvas.style('width', '100%');
+        canvas.style('height', '100%');
+        canvas.style('display', 'block');
         
         // Initialize particles
         resetParticles();
@@ -224,9 +233,20 @@ export function useP5Visualization(options: VisualizationOptions): P5Visualizati
       // Window resize handler
       p.windowResized = () => {
         if (canvasRef.current) {
-          p.resizeCanvas(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+          // Get accurate container dimensions, fallback to window dimensions if needed
+          const containerWidth = canvasRef.current.clientWidth || window.innerWidth;
+          const containerHeight = canvasRef.current.clientHeight || window.innerHeight;
+          
+          // Resize canvas to match container
+          p.resizeCanvas(containerWidth, containerHeight);
+          
+          // Reinitialize elements to fit new canvas size
           resetBackgroundElements();
           resetCelestialBodies();
+          resetWaves();
+          
+          // Force a redraw immediately to prevent flickering
+          p.redraw();
         }
       };
       
