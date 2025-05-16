@@ -273,9 +273,21 @@ export function useToneAudio(options: ToneAudioOptions) {
       }
     }
     
-    // If Transport is running, stop it
-    if (Tone.Transport.state !== 'stopped') {
-      Tone.Transport.stop();
+    try {
+      // If Transport is running, stop it
+      if (Tone.Transport && Tone.Transport.state !== 'stopped') {
+        Tone.Transport.stop();
+        
+        // Cancel any scheduled events to ensure clean state
+        Tone.Transport.cancel();
+      }
+      
+      // Make sure synth isn't making sound
+      if (synthRef.current) {
+        synthRef.current.releaseAll();
+      }
+    } catch (e) {
+      console.error('Error stopping Tone.js transport:', e);
     }
     
     if (isMountedRef.current) {

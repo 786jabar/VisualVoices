@@ -136,56 +136,104 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       p.setup = () => {
         if (!canvasRef.current) return;
         
-        // Create canvas that fills the container div
-        const canvas = p.createCanvas(
-          canvasRef.current.clientWidth || 300, 
-          canvasRef.current.clientHeight || 200, 
-          p.WEBGL
-        );
-        canvas.parent(canvasRef.current);
-        
-        // Set rendering parameters
-        p.frameRate(30);
-        
-        // Initialize terrain grid
-        cols = Math.ceil(p.width / scl) + 2;
-        rows = Math.ceil(p.height / scl) + 2;
-        
-        // Safely initialize colors
         try {
-          primaryColor = p.color(safeColors.primary);
-          secondaryColor = p.color(safeColors.secondary);
-          accentColor = p.color(safeColors.accent);
-        } catch (err) {
-          // Fallback to RGB values if hex parsing fails
-          primaryColor = p.color(59, 89, 152);
-          secondaryColor = p.color(25, 42, 86);
-          accentColor = p.color(76, 209, 55);
+          // Create canvas that fills the container div with error handling
+          let canvasWidth = 300, canvasHeight = 200;
+          
+          // Make sure we get valid dimensions
+          if (canvasRef.current) {
+            canvasWidth = canvasRef.current.clientWidth || 300;
+            canvasHeight = canvasRef.current.clientHeight || 200;
+            
+            // Ensure minimum size to prevent rendering issues
+            canvasWidth = Math.max(canvasWidth, 100);
+            canvasHeight = Math.max(canvasHeight, 100);
+          }
+          
+          // Create canvas with proper error handling
+          const canvas = p.createCanvas(canvasWidth, canvasHeight, p.WEBGL);
+          
+          // Only attach to parent if it exists
+          if (canvasRef.current) {
+            canvas.parent(canvasRef.current);
+          }
+          
+          // Set rendering parameters - lower framerate for better performance
+          p.frameRate(24);
+          
+          // Initialize terrain grid with validation
+          cols = Math.ceil(p.width / scl) + 2;
+          rows = Math.ceil(p.height / scl) + 2;
+          
+          // Ensure cols and rows are valid numbers
+          cols = isNaN(cols) ? 20 : cols;
+          rows = isNaN(rows) ? 20 : rows;
+          
+          // Safely initialize colors with validation checks
+          try {
+            // Make sure all color strings are valid
+            const validPrimary = typeof safeColors.primary === 'string' ? safeColors.primary : '#3b5998';
+            const validSecondary = typeof safeColors.secondary === 'string' ? safeColors.secondary : '#192a56';
+            const validAccent = typeof safeColors.accent === 'string' ? safeColors.accent : '#4cd137';
+            
+            primaryColor = p.color(validPrimary);
+            secondaryColor = p.color(validSecondary);
+            accentColor = p.color(validAccent);
+          } catch (err) {
+            console.error('Error creating colors:', err);
+            // Fallback to RGB values if hex parsing fails
+            primaryColor = p.color(59, 89, 152);
+            secondaryColor = p.color(25, 42, 86);
+            accentColor = p.color(76, 209, 55);
+          }
+          
+          // Initialize scene elements with try-catch blocks
+          try {
+            createFlowField();
+            refreshTerrain();
+            initializeParticles();
+          } catch (err) {
+            console.error('Error initializing p5.js scene:', err);
+          }
+        } catch (setupErr) {
+          console.error('Critical error in p5.js setup:', setupErr);
         }
-        
-        // Initialize scene elements
-        createFlowField();
-        refreshTerrain();
-        initializeParticles();
       };
 
       // Draw function - called every frame
       p.draw = () => {
+        // Skip rendering if visualization isn't supposed to be active
         if (!isActive) return;
         
-        // Clear background with gradient
-        drawBackground();
-        
-        // Draw 3D terrain
-        drawTerrain();
-        
-        // Update and draw atmospheric particles
-        updateParticles();
-        
-        // Move through terrain if in flow mode
-        if (isFlowing) {
-          flying -= 0.015;
-          refreshTerrain();
+        try {
+          // Clear background with gradient
+          drawBackground();
+          
+          // Draw 3D terrain
+          drawTerrain();
+          
+          // Update and draw atmospheric particles
+          updateParticles();
+          
+          // Move through terrain if in flow mode
+          if (isFlowing) {
+            flying -= 0.015;
+            try {
+              refreshTerrain();
+            } catch (err) {
+              console.error('Error refreshing terrain:', err);
+            }
+          }
+        } catch (drawError) {
+          // Log errors but don't crash the component
+          console.error('Error in p5.js draw cycle:', drawError);
+          
+          // Attempt basic recovery - clear the canvas
+          try {
+            p.background(0);
+          } catch (e) {
+            // Critical failure - can't even clear background
+          }
         }
       };
       
