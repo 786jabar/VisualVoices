@@ -82,7 +82,7 @@ const SocialShareModal: React.FC<SocialShareModalProps> = ({
   
   // Handle direct sharing via Web Share API if available
   const handleNativeShare = () => {
-    if (navigator.share) {
+    if (typeof navigator.share === 'function') {
       navigator.share({
         title: `Vocal Earth: ${title}`,
         text: customMessage || poeticSummary || description || title,

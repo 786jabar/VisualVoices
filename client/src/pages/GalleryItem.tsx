@@ -622,6 +622,18 @@ const GalleryItem: FC = () => {
           </div>
         </div>
       </main>
+      
+      {/* Social Share Modal */}
+      {visualization && (
+        <SocialShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          imageUrl={visualization.imageData}
+          title={visualization.title}
+          description={visualization.description || undefined}
+          poeticSummary={visualization.poeticSummary}
+        />
+      )}
     </div>
   );
 };

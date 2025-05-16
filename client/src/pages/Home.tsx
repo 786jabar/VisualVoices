@@ -9,6 +9,7 @@ import ControlPanel from '@/components/ControlPanel';
 import HelpModal from '@/components/HelpModal';
 import SettingsModal from '@/components/SettingsModal';
 import EmotionTracker from '@/components/EmotionTracker';
+import SocialShareModal from '@/components/SocialShareModal';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useToneAudio } from '@/hooks/useToneAudio';
@@ -19,6 +20,8 @@ export default function Home() {
   // State for modals
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string>('');
   
   // State for settings
   const [settings, setSettings] = useState({
