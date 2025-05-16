@@ -1,9 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import p5 from 'p5';
 
-// Type definition for p5.Color to fix typing issues
-type P5Color = any;
-
+// Define prop types
 interface LandscapePreviewCanvasProps {
   colors: {
     primary: string;
@@ -14,6 +12,13 @@ interface LandscapePreviewCanvasProps {
   isActive: boolean;
 }
 
+// Default colors for fallback scenarios
+const DEFAULT_COLORS = {
+  primary: '#3b5998',
+  secondary: '#192a56',
+  accent: '#4cd137'
+};
+
 const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({ 
   colors, 
   soundscapeType,
@@ -23,7 +28,15 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
   const p5InstanceRef = useRef<p5 | null>(null);
 
   useEffect(() => {
+    // Only create new instance if none exists and container is ready
     if (!canvasRef.current || p5InstanceRef.current) return;
+
+    // Safely extract colors with fallbacks
+    const safeColors = {
+      primary: colors?.primary || DEFAULT_COLORS.primary,
+      secondary: colors?.secondary || DEFAULT_COLORS.secondary,
+      accent: colors?.accent || DEFAULT_COLORS.accent
+    };
 
     // Create new p5 instance for rendering 3D landscape visualization
     const sketch = (p: p5) => {
@@ -35,66 +48,123 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       let flying = 0;
       let flowField: p5.Vector[] = [];
       const scl = 20;
-      let isMountainous = soundscapeType === 'dramatic' || soundscapeType === 'peaceful';
-      let isFlowing = soundscapeType === 'mysterious' || soundscapeType === 'cheerful';
-      let useBlend = soundscapeType === 'melancholic';
       
-      // Decode color hex values
-      let primaryColor: P5Color;
-      let secondaryColor: P5Color;
-      let accentColor: P5Color;
+      // Landscape style flags
+      const isMountainous = soundscapeType === 'dramatic' || soundscapeType === 'peaceful';
+      const isFlowing = soundscapeType === 'mysterious' || soundscapeType === 'cheerful';
+      const useBlend = soundscapeType === 'melancholic';
       
-      // Initialize with default colors first
-      primaryColor = p.color(50, 100, 150);
-      secondaryColor = p.color(20, 40, 80);
-      accentColor = p.color(200, 150, 100);
-      
-      // Try to apply custom colors if they exist
-      if (colors && typeof colors === 'object') {
-        if (colors.primary) primaryColor = p.color(colors.primary);
-        if (colors.secondary) secondaryColor = p.color(colors.secondary);
-        if (colors.accent) accentColor = p.color(colors.accent);
+      // Color objects - initialized in setup
+      let primaryColor: any = null;
+      let secondaryColor: any = null;
+      let accentColor: any = null;
+
+      // Initialize particles for atmospheric effects
+      function initializeParticles() {
+        for (let i = 0; i < numParticles; i++) {
+          const pos = p.createVector(
+            p.random(-p.width/2, p.width/2),
+            p.random(-p.height/2, p.height/2),
+            p.random(-100, 100)
+          );
+          
+          const vel = p.createVector(
+            p.random(-1, 1) * 0.3,
+            p.random(-1, 1) * 0.3,
+            p.random(-0.5, 0.5) * 0.4
+          );
+          
+          let particleColor;
+          try {
+            particleColor = p.lerpColor(secondaryColor, accentColor, p.random());
+          } catch (err) {
+            particleColor = p.color(150, 150, 200);
+          }
+          
+          particles.push({
+            pos: pos,
+            vel: vel,
+            size: p.random(2, 6),
+            color: particleColor,
+            alpha: p.random(100, 200)
+          });
+        }
+      }
+
+      // Create flow field for dynamic particle movement
+      function createFlowField() {
+        flowField = [];
+        const resolution = 20;
+        const cols = Math.ceil(p.width / resolution);
+        const rows = Math.ceil(p.height / resolution);
+        
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const angle = p.noise(x * 0.1, y * 0.1) * p.TWO_PI * 2;
+            const v = p5.Vector.fromAngle(angle);
+            v.setMag(0.5);
+            flowField.push(v);
+          }
+        }
       }
       
-      // Setup function
+      // Generate terrain heightmap using Perlin noise
+      function refreshTerrain() {
+        terrain = [];
+        for (let x = 0; x < cols; x++) {
+          terrain[x] = [];
+          for (let y = 0; y < rows; y++) {
+            let noiseVal;
+            
+            if (isMountainous) {
+              noiseVal = p.noise(x * 0.1, y * 0.1, flying) * 70;
+              if (noiseVal > 30) noiseVal *= 1.5;
+            } else if (useBlend) {
+              noiseVal = p.noise(x * 0.07, y * 0.07, flying) * 50;
+            } else {
+              noiseVal = p.noise(x * 0.1, y * 0.1, flying) * 60;
+            }
+            
+            terrain[x][y] = noiseVal;
+          }
+        }
+      }
+
+      // Setup function - p5.js initialization
       p.setup = () => {
         if (!canvasRef.current) return;
         
-        // Create canvas that fills the containing div
-        const canvas = p.createCanvas(canvasRef.current.clientWidth, canvasRef.current.clientHeight, p.WEBGL);
+        // Create canvas that fills the container div
+        const canvas = p.createCanvas(
+          canvasRef.current.clientWidth || 300, 
+          canvasRef.current.clientHeight || 200, 
+          p.WEBGL
+        );
         canvas.parent(canvasRef.current);
         
-        // Set initial rendering values based on soundscape type
+        // Set rendering parameters
         p.frameRate(30);
         
         // Initialize terrain grid
         cols = Math.ceil(p.width / scl) + 2;
         rows = Math.ceil(p.height / scl) + 2;
         
-        // Create initial terrain heightmap
-        refreshTerrain();
-        
-        // Initialize particles for atmospheric effects
-        for (let i = 0; i < numParticles; i++) {
-          particles.push({
-            pos: p.createVector(
-              p.random(-p.width/2, p.width/2),
-              p.random(-p.height/2, p.height/2),
-              p.random(-100, 100)
-            ),
-            vel: p.createVector(
-              p.random(-1, 1) * 0.3,
-              p.random(-1, 1) * 0.3,
-              p.random(-0.5, 0.5) * 0.4
-            ),
-            size: p.random(2, 6),
-            color: p.lerpColor(secondaryColor, accentColor, p.random()),
-            alpha: p.random(100, 200)
-          });
+        // Safely initialize colors
+        try {
+          primaryColor = p.color(safeColors.primary);
+          secondaryColor = p.color(safeColors.secondary);
+          accentColor = p.color(safeColors.accent);
+        } catch (err) {
+          // Fallback to RGB values if hex parsing fails
+          primaryColor = p.color(59, 89, 152);
+          secondaryColor = p.color(25, 42, 86);
+          accentColor = p.color(76, 209, 55);
         }
         
-        // Create flow field for particle movement
+        // Initialize scene elements
         createFlowField();
+        refreshTerrain();
+        initializeParticles();
       };
 
       // Draw function - called every frame
@@ -117,36 +187,7 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         }
       };
       
-      // Handle window resize
-      p.windowResized = () => {
-        if (!canvasRef.current) return;
-        p.resizeCanvas(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
-        
-        // Reinitialize terrain grid on resize
-        cols = Math.ceil(p.width / scl) + 2;
-        rows = Math.ceil(p.height / scl) + 2;
-        refreshTerrain();
-        createFlowField();
-      };
-      
-      // Create flow field for particle movement
-      function createFlowField() {
-        flowField = [];
-        const resolution = 20;
-        const cols = Math.ceil(p.width / resolution);
-        const rows = Math.ceil(p.height / resolution);
-        
-        for (let y = 0; y < rows; y++) {
-          for (let x = 0; x < cols; x++) {
-            const angle = p.noise(x * 0.1, y * 0.1) * p.TWO_PI * 2;
-            const v = p5.Vector.fromAngle(angle);
-            v.setMag(0.5);
-            flowField.push(v);
-          }
-        }
-      }
-      
-      // Draw gradient background based on colors
+      // Draw gradient background
       function drawBackground() {
         p.background(0);
         p.push();
@@ -157,38 +198,13 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         p.translate(0, 0, -500);
         p.rotateX(p.PI/2);
         
-        // Create new color objects - this avoids referencing the original objects
-        // which might be undefined initially during animation
-        let skyColorTop = p.color(50, 100, 150);
-        let skyColorBottom = p.color(20, 40, 80);
+        let skyColorTop, skyColorBottom;
         
-        // Safely get color components from primaryColor/secondaryColor
-        if (primaryColor) {
-          try {
-            skyColorTop = p.color(
-              primaryColor.levels ? primaryColor.levels[0] : 50, 
-              primaryColor.levels ? primaryColor.levels[1] : 100, 
-              primaryColor.levels ? primaryColor.levels[2] : 150
-            );
-          } catch (e) {
-            // Keep default if error
-          }
-        }
-        
-        if (secondaryColor) {
-          try {
-            skyColorBottom = p.color(
-              secondaryColor.levels ? secondaryColor.levels[0] : 20, 
-              secondaryColor.levels ? secondaryColor.levels[1] : 40, 
-              secondaryColor.levels ? secondaryColor.levels[2] : 80
-            );
-          } catch (e) {
-            // Keep default if error
-          }
-        }
-        
-        // Adjust colors based on soundscape type
         try {
+          skyColorTop = p.color(p.red(primaryColor), p.green(primaryColor), p.blue(primaryColor));
+          skyColorBottom = p.color(p.red(secondaryColor), p.green(secondaryColor), p.blue(secondaryColor));
+          
+          // Adjust colors based on soundscape type
           if (soundscapeType === 'dramatic') {
             skyColorTop.setAlpha(180);
             skyColorBottom.setAlpha(220);
@@ -199,47 +215,30 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
             skyColorTop.setAlpha(200);
             skyColorBottom.setAlpha(240);
           }
-        } catch (e) {
-          // If alpha setting fails, continue without it
+        } catch (err) {
+          // Default fallback colors
+          skyColorTop = p.color(50, 100, 150, 200);
+          skyColorBottom = p.color(20, 40, 80, 240);
         }
         
-        // Draw sky dome
+        // Draw sky gradient lines
         for (let y = -p.height/2; y < p.height/2; y += 5) {
-          const inter = p.map(y, -p.height/2, p.height/2, 0, 1);
-          const c = p.lerpColor(skyColorTop, skyColorBottom, inter);
-          p.stroke(c);
+          try {
+            const inter = p.map(y, -p.height/2, p.height/2, 0, 1);
+            const c = p.lerpColor(skyColorTop, skyColorBottom, inter);
+            p.stroke(c);
+          } catch (err) {
+            // Fallback if color lerping fails
+            const brightness = p.map(y, -p.height/2, p.height/2, 100, 40);
+            p.stroke(50, 70, brightness, 200);
+          }
           p.line(-p.width/2, y, p.width/2, y);
         }
         p.pop();
+        p.pop();
       }
       
-      // Generate new terrain heightmap based on noise
-      function refreshTerrain() {
-        terrain = [];
-        for (let x = 0; x < cols; x++) {
-          terrain[x] = [];
-          for (let y = 0; y < rows; y++) {
-            // Use Perlin noise to generate height map with flying offset
-            let noiseVal;
-            
-            if (isMountainous) {
-              // More dramatic peaks for mountainous landscapes
-              noiseVal = p.noise(x * 0.1, y * 0.1, flying) * 70;
-              if (noiseVal > 30) noiseVal *= 1.5;
-            } else if (useBlend) {
-              // Gentler rolling terrain
-              noiseVal = p.noise(x * 0.07, y * 0.07, flying) * 50;
-            } else {
-              // Standard terrain
-              noiseVal = p.noise(x * 0.1, y * 0.1, flying) * 60;
-            }
-            
-            terrain[x][y] = noiseVal;
-          }
-        }
-      }
-      
-      // Draw the 3D terrain
+      // Draw 3D terrain
       function drawTerrain() {
         p.push();
         
@@ -248,25 +247,32 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         p.rotateX(p.PI/3); // Tilt the terrain
         p.translate(0, 50);
         
-        // Apply different rendering styles based on soundscape
-        if (soundscapeType === 'peaceful') {
-          p.stroke(255, 100);
-          p.noFill();
-        } else if (soundscapeType === 'dramatic') {
-          p.stroke(accentColor);
-          p.fill(primaryColor);
+        try {
+          // Apply different rendering styles based on soundscape
+          if (soundscapeType === 'peaceful') {
+            p.stroke(255, 100);
+            p.noFill();
+          } else if (soundscapeType === 'dramatic') {
+            p.stroke(accentColor);
+            p.fill(primaryColor);
+            p.strokeWeight(0.5);
+          } else if (soundscapeType === 'mysterious') {
+            p.noStroke();
+            p.fill(primaryColor);
+          } else if (soundscapeType === 'cheerful') {
+            p.stroke(accentColor);
+            p.fill(secondaryColor);
+            p.strokeWeight(0.7);
+          } else { // melancholic
+            p.stroke(50);
+            p.fill(primaryColor);
+            p.strokeWeight(0.3);
+          }
+        } catch (err) {
+          // Fallback style if colors aren't available
+          p.stroke(200, 100);
+          p.fill(30, 40, 80);
           p.strokeWeight(0.5);
-        } else if (soundscapeType === 'mysterious') {
-          p.noStroke();
-          p.fill(primaryColor);
-        } else if (soundscapeType === 'cheerful') {
-          p.stroke(accentColor);
-          p.fill(secondaryColor);
-          p.strokeWeight(0.7);
-        } else { // melancholic
-          p.stroke(50);
-          p.fill(primaryColor);
-          p.strokeWeight(0.3);
         }
         
         // Draw terrain as triangle strips
@@ -274,19 +280,24 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           p.beginShape(p.TRIANGLE_STRIP);
           for (let x = 0; x < cols; x++) {
             if (useBlend && x % 2 === 0) {
-              p.fill(p.lerpColor(primaryColor, secondaryColor, p.noise(x*0.1, y*0.1)));
+              try {
+                p.fill(p.lerpColor(primaryColor, secondaryColor, p.noise(x*0.1, y*0.1)));
+              } catch (err) {
+                // Fallback if color lerp fails
+                p.fill(30, 40, 80);
+              }
             }
             
             // Add vertices for current row and next row
-            p.vertex(x * scl, y * scl, terrain[x][y]);
-            p.vertex(x * scl, (y + 1) * scl, terrain[x][y + 1]);
+            p.vertex(x * scl, y * scl, terrain[x]?.[y] || 0);
+            p.vertex(x * scl, (y + 1) * scl, terrain[x]?.[y + 1] || 0);
           }
           p.endShape();
         }
         p.pop();
       }
       
-      // Update and draw particles for atmospheric effects
+      // Update and draw particles
       function updateParticles() {
         p.push();
         p.noStroke();
@@ -295,20 +306,25 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           const particle = particles[i];
           
           // Move particles
-          if (isFlowing) {
-            // Follow flow field for more organic movement
-            const index = Math.floor(
-              ((particle.pos.x + p.width/2) / p.width * (flowField.length/rows)) + 
-              ((particle.pos.y + p.height/2) / p.height * rows)
-            ) % flowField.length;
-            
-            if (index >= 0 && index < flowField.length) {
-              const force = flowField[index].copy();
-              force.mult(0.1);
-              particle.vel.add(force);
+          if (isFlowing && flowField.length > 0) {
+            try {
+              // Follow flow field for more organic movement
+              const index = Math.floor(
+                ((particle.pos.x + p.width/2) / p.width * (flowField.length/(rows || 1))) + 
+                ((particle.pos.y + p.height/2) / p.height * (rows || 1))
+              ) % flowField.length;
+              
+              if (index >= 0 && index < flowField.length) {
+                const force = flowField[index].copy();
+                force.mult(0.1);
+                particle.vel.add(force);
+              }
+              
+              particle.vel.limit(0.7);
+            } catch (err) {
+              // Simple movement if flow field fails
+              particle.vel.add(p.createVector(p.random(-0.01, 0.01), p.random(-0.01, 0.01)));
             }
-            
-            particle.vel.limit(0.7);
           }
           
           // Update position
@@ -322,28 +338,49 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           if (particle.pos.z < -100) particle.pos.z = 100;
           if (particle.pos.z > 100) particle.pos.z = -100;
           
-          // Draw particle with custom style based on soundscape
-          if (soundscapeType === 'mysterious') {
-            p.fill(particle.color.levels[0], particle.color.levels[1], particle.color.levels[2], 
-              particle.alpha * 0.7 * (1 + p.sin(p.frameCount * 0.02 + i * 0.1) * 0.3));
+          try {
+            // Draw particle with custom style based on soundscape
+            if (soundscapeType === 'mysterious') {
+              p.fill(
+                particle.color.levels?.[0] || 100, 
+                particle.color.levels?.[1] || 100, 
+                particle.color.levels?.[2] || 200, 
+                (particle.alpha || 150) * 0.7 * (1 + p.sin(p.frameCount * 0.02 + i * 0.1) * 0.3)
+              );
+              p.push();
+              p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+              p.rotateY(p.frameCount * 0.01);
+              p.box(particle.size);
+              p.pop();
+            } else if (soundscapeType === 'dramatic') {
+              p.fill(
+                particle.color.levels?.[0] || 200, 
+                particle.color.levels?.[1] || 150, 
+                particle.color.levels?.[2] || 100, 
+                particle.alpha || 150
+              );
+              p.push();
+              p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+              drawStar(0, 0, particle.size, particle.size * 2, 4);
+              p.pop();
+            } else {
+              p.fill(
+                particle.color.levels?.[0] || 150, 
+                particle.color.levels?.[1] || 150, 
+                particle.color.levels?.[2] || 200, 
+                particle.alpha || 150
+              );
+              p.push();
+              p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+              p.ellipse(0, 0, particle.size);
+              p.pop();
+            }
+          } catch (err) {
+            // Fallback rendering if color extraction fails
+            p.fill(150, 150, 200, 150);
             p.push();
             p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
-            p.rotateY(p.frameCount * 0.01);
-            p.box(particle.size);
-            p.pop();
-          } else if (soundscapeType === 'dramatic') {
-            // Star-like particles for dramatic scenes
-            p.fill(particle.color.levels[0], particle.color.levels[1], particle.color.levels[2], particle.alpha);
-            p.push();
-            p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
-            drawStar(0, 0, particle.size, particle.size * 2, 4);
-            p.pop();
-          } else {
-            // Default circular particles
-            p.fill(particle.color.levels[0], particle.color.levels[1], particle.color.levels[2], particle.alpha);
-            p.push();
-            p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
-            p.ellipse(0, 0, particle.size);
+            p.ellipse(0, 0, particle.size || 4);
             p.pop();
           }
         }
@@ -362,15 +399,39 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         }
         p.endShape(p.CLOSE);
       }
+      
+      // Handle window resize
+      p.windowResized = () => {
+        if (!canvasRef.current) return;
+        try {
+          p.resizeCanvas(canvasRef.current.clientWidth || 300, canvasRef.current.clientHeight || 200);
+          
+          // Reinitialize terrain grid on resize
+          cols = Math.ceil(p.width / scl) + 2;
+          rows = Math.ceil(p.height / scl) + 2;
+          refreshTerrain();
+          createFlowField();
+        } catch (err) {
+          console.log('Error resizing canvas');
+        }
+      };
     };
 
     // Create the p5 instance
-    p5InstanceRef.current = new p5(sketch);
+    try {
+      p5InstanceRef.current = new p5(sketch);
+    } catch (err) {
+      console.error('Error creating p5 instance');
+    }
 
     // Cleanup function
     return () => {
       if (p5InstanceRef.current) {
-        p5InstanceRef.current.remove();
+        try {
+          p5InstanceRef.current.remove();
+        } catch (err) {
+          console.error('Error removing p5 instance');
+        }
         p5InstanceRef.current = null;
       }
     };
@@ -378,16 +439,18 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
 
   // If soundscape type changes, update the visualization
   useEffect(() => {
-    // Force canvas redraw if soundscapeType changes
     if (p5InstanceRef.current) {
-      p5InstanceRef.current.remove();
+      try {
+        p5InstanceRef.current.remove();
+      } catch (err) {
+        console.error('Error removing p5 instance');
+      }
       p5InstanceRef.current = null;
       
       // Short delay to ensure clean removal before new instance
       setTimeout(() => {
-        const canvasElement = canvasRef.current;
-        if (canvasElement) {
-          canvasElement.innerHTML = '';
+        if (canvasRef.current) {
+          canvasRef.current.innerHTML = '';
         }
       }, 50);
     }
