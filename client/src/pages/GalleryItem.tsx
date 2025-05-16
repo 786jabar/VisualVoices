@@ -27,6 +27,7 @@ import { useP5Visualization } from '@/hooks/useP5Visualization';
 import { useToneAudio } from '@/hooks/useToneAudio';
 import { useMultipleSoundscapes, SoundscapeType } from '@/hooks/useMultipleSoundscapes';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { getSentimentEmoji, getSentimentDescription } from '@/lib/utils';
 import {
   Select,
@@ -184,11 +185,30 @@ const GalleryItem: FC = () => {
     }
   }, [visualization, narration, isGeneratingNarration]);
   
-  // Toggle audio playback
+  // Use audio coordinator to manage global audio state
+  const { isActive: isAudioApproved, requestPlayback, stopPlayback } = useAudioCoordinator('gallery-item');
+
+  // Toggle audio playback with global coordination
   const handleToggleAudio = async () => {
-    setIsAudioEnabled(!isAudioEnabled);
-    if (isSoundscapeInitialized) {
-      await toggleSoundscape();
+    if (isAudioEnabled) {
+      // Turn off audio
+      setIsAudioEnabled(false);
+      stopPlayback(); // Release global audio lock
+      
+      if (isSoundscapeInitialized) {
+        await toggleSoundscape();
+      }
+    } else {
+      // First, request permission to play audio
+      const granted = requestPlayback();
+      
+      if (granted) {
+        setIsAudioEnabled(true);
+        
+        if (isSoundscapeInitialized) {
+          await toggleSoundscape();
+        }
+      }
     }
   };
   
