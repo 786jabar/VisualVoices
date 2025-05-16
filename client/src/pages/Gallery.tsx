@@ -197,7 +197,7 @@ const Gallery: FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoadingUserVisualizations ? (
                 renderSkeleton()
-              ) : userVisualizations?.length ? (
+              ) : userVisualizations && userVisualizations.length > 0 ? (
                 userVisualizations.map(item => renderGalleryCard(item))
               ) : (
                 <div className="col-span-full text-center py-20">
@@ -230,7 +230,7 @@ const Gallery: FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoadingPublicVisualizations ? (
                 renderSkeleton()
-              ) : publicVisualizations?.length ? (
+              ) : publicVisualizations && publicVisualizations.length > 0 ? (
                 publicVisualizations.map(item => renderGalleryCard(item))
               ) : (
                 <div className="col-span-full text-center py-20">

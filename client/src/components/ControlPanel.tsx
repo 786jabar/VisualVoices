@@ -119,7 +119,7 @@ const ControlPanel: FC<ControlPanelProps> = ({
     mutationFn: async (imageData: string) => {
       return apiRequest('/api/gallery', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           title: galleryItemTitle || `VocalEarth Creation - ${new Date().toLocaleDateString()}`,
           description: galleryItemDescription || null,
           transcriptionText: transcription,
@@ -132,7 +132,7 @@ const ControlPanel: FC<ControlPanelProps> = ({
             motion
           },
           isPublic
-        })
+        }
       });
     },
     onSuccess: () => {

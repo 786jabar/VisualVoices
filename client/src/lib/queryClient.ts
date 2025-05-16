@@ -1,5 +1,15 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+interface ApiRequestOptions extends RequestInit {
+  body?: any;
+}
+
+// Helper function to normalize URL (string) or RequestInfo object with URL
+function normalizeUrlOrRequest(urlOrRequest: string | RequestInfo): RequestInfo {
+  return urlOrRequest;
+}
+
+// Helper to throw errors for non-ok responses
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -7,20 +17,48 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
+// Enhanced API request function that supports both string URL + method or request options object
+export async function apiRequest<T = any>(
+  urlOrRequest: string | RequestInfo,
+  options?: ApiRequestOptions
+): Promise<T> {
+  let fetchOptions: RequestInit = {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    ...options
+  };
+  
+  // If body is an object, stringify it
+  if (options?.body && typeof options.body === 'object') {
+    fetchOptions.body = JSON.stringify(options.body);
+  }
+  
+  // Make the request
+  const res = await fetch(normalizeUrlOrRequest(urlOrRequest), fetchOptions);
+  
+  // Check for errors
+  await throwIfResNotOk(res);
+  
+  // Parse JSON response
+  if (res.headers.get('content-type')?.includes('application/json')) {
+    return res.json() as Promise<T>;
+  }
+  
+  return res as unknown as T;
+}
+
+// Legacy method (for backward compatibility)
+export async function legacyApiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  return fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
-
-  await throwIfResNotOk(res);
-  return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -58,7 +96,9 @@ export const queryClient = new QueryClient({
 
 // Custom function to generate poetic summary using the backend
 export async function generatePoeticSummary(transcription: string): Promise<string> {
-  const response = await apiRequest("POST", "/api/generate-summary", { transcription });
-  const data = await response.json();
+  const data = await apiRequest<{summary: string}>("/api/generate-summary", {
+    method: "POST",
+    body: { transcription }
+  });
   return data.summary;
 }

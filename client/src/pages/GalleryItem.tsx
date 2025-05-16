@@ -56,7 +56,7 @@ const GalleryItem: FC = () => {
     error
   } = useQuery({
     queryKey: ['gallery', params?.id],
-    queryFn: () => apiRequest<Visualization>(`/api/gallery/${params?.id}`),
+    queryFn: () => apiRequest<Visualization>(`/api/gallery/${params?.id}`, { method: 'GET' }),
     enabled: !!params?.id
   });
   
