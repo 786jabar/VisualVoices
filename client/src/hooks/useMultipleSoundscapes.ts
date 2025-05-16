@@ -78,11 +78,10 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
       
       setIsInitialized(true);
       
-      // Start playing if isActive is true
-      if (options.isActive) {
-        Tone.Transport.start();
-        setIsPlaying(true);
-      }
+      // Don't auto-play - require user interaction first
+      // Even if isActive is true, we'll wait for explicit user control
+      setIsPlaying(false);
+      Tone.Transport.pause();
     } catch (error) {
       console.error('Failed to initialize audio:', error);
     }

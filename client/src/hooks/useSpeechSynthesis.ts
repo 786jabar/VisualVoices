@@ -57,12 +57,19 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}): Speech
           const languageCode = preferredLanguage.split('-')[0]; // Extract base language code
           
           // Try to find a female voice in the user's preferred language
+          // Prioritize female voices for better narration
           const preferredFemaleLangVoice = availableVoices.find(
             voice => voice.lang.includes(languageCode) && 
                     (voice.name.toLowerCase().includes('female') || 
                      voice.name.toLowerCase().includes('woman') ||
-                     voice.name.includes('f') || 
-                     voice.name.includes('F'))
+                     voice.name.toLowerCase().includes('girl') ||
+                     (voice.name.toLowerCase().includes('google') && !voice.name.toLowerCase().includes('male')) ||
+                     voice.name.toLowerCase().includes('samantha') ||
+                     voice.name.toLowerCase().includes('lisa') ||
+                     voice.name.toLowerCase().includes('karen') ||
+                     voice.name.toLowerCase().includes('tessa') ||
+                     voice.name.toLowerCase().includes('monica') ||
+                     voice.name.toLowerCase().includes('f '))
           );
           
           // Try any voice in the preferred language
@@ -74,21 +81,33 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}): Speech
           const femaleEnglishVoice = availableVoices.find(
             voice => voice.lang.includes('en') && 
                     (voice.name.toLowerCase().includes('female') || 
-                     voice.name.toLowerCase().includes('woman'))
+                     voice.name.toLowerCase().includes('woman') ||
+                     voice.name.toLowerCase().includes('girl') ||
+                     (voice.name.toLowerCase().includes('google') && !voice.name.toLowerCase().includes('male')) ||
+                     voice.name.toLowerCase().includes('samantha') ||
+                     voice.name.toLowerCase().includes('lisa') ||
+                     voice.name.toLowerCase().includes('karen') ||
+                     voice.name.toLowerCase().includes('tessa') ||
+                     voice.name.toLowerCase().includes('monica') ||
+                     voice.name.toLowerCase().includes('f '))
           );
           
           const englishVoice = availableVoices.find(
             voice => voice.lang.includes('en')
           );
           
-          // Set voice with appropriate fallbacks
-          setCurrentVoice(
-            preferredFemaleLangVoice || 
+          // Set voice with appropriate fallbacks - prioritize female voices
+          console.log("Available voices:", availableVoices.map(v => `${v.name} (${v.lang})`));
+          
+          // Always prioritize female voices for narration
+          const selectedVoice = preferredFemaleLangVoice || 
             preferredLangVoice || 
             femaleEnglishVoice || 
             englishVoice || 
-            availableVoices[0]
-          );
+            availableVoices[0];
+            
+          console.log("Selected voice:", selectedVoice ? `${selectedVoice.name} (${selectedVoice.lang})` : "No voice selected");
+          setCurrentVoice(selectedVoice);
         }
       }
     };
