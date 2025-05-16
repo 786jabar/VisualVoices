@@ -52,18 +52,43 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}): Speech
         
         // Set a default voice if not already set
         if (!currentVoice) {
-          // Try to find a female English voice for better landscape narration
-          const femaleEnglishVoice = availableVoices.find(
-            voice => voice.lang.includes('en') && voice.name.toLowerCase().includes('female')
+          // Get preferred language from localStorage (default to English)
+          const preferredLanguage = localStorage.getItem('preferredLanguage') || 'en-US';
+          const languageCode = preferredLanguage.split('-')[0]; // Extract base language code
+          
+          // Try to find a female voice in the user's preferred language
+          const preferredFemaleLangVoice = availableVoices.find(
+            voice => voice.lang.includes(languageCode) && 
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('woman') ||
+                     voice.name.includes('f') || 
+                     voice.name.includes('F'))
           );
           
-          // Fallback to any English voice
+          // Try any voice in the preferred language
+          const preferredLangVoice = availableVoices.find(
+            voice => voice.lang.includes(languageCode)
+          );
+          
+          // Fallbacks: Female English voice, any English voice, then first available voice
+          const femaleEnglishVoice = availableVoices.find(
+            voice => voice.lang.includes('en') && 
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('woman'))
+          );
+          
           const englishVoice = availableVoices.find(
             voice => voice.lang.includes('en')
           );
           
-          // Final fallback to the first available voice
-          setCurrentVoice(femaleEnglishVoice || englishVoice || availableVoices[0]);
+          // Set voice with appropriate fallbacks
+          setCurrentVoice(
+            preferredFemaleLangVoice || 
+            preferredLangVoice || 
+            femaleEnglishVoice || 
+            englishVoice || 
+            availableVoices[0]
+          );
         }
       }
     };

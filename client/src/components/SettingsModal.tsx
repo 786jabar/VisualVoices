@@ -131,26 +131,53 @@ const SettingsModal: FC<SettingsModalProps> = ({
           
           <div>
             <h4 className="font-medium mb-3">Language Settings</h4>
-            <div>
-              <Label htmlFor="language-select" className="text-sm block mb-1">
-                Voice Recognition Language
-              </Label>
-              <Select 
-                value={localSettings.language}
-                onValueChange={(value) => setLocalSettings({...localSettings, language: value})}
-              >
-                <SelectTrigger className="w-full bg-dark-200 border-dark-300">
-                  <SelectValue placeholder="Select a language" />
-                </SelectTrigger>
-                <SelectContent className="bg-dark-100 border-dark-300">
-                  <SelectItem value="en-US">English (US)</SelectItem>
-                  <SelectItem value="en-GB">English (UK)</SelectItem>
-                  <SelectItem value="es-ES">Spanish</SelectItem>
-                  <SelectItem value="fr-FR">French</SelectItem>
-                  <SelectItem value="de-DE">German</SelectItem>
-                  <SelectItem value="ja-JP">Japanese</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="language-select" className="text-sm block mb-1">
+                  Voice Recognition & AI Speech Language
+                </Label>
+                <Select 
+                  value={localSettings.language}
+                  onValueChange={(value) => {
+                    setLocalSettings({...localSettings, language: value});
+                    // Store language preference in localStorage for speech recognition and synthesis
+                    localStorage.setItem('preferredLanguage', value);
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-dark-200 border-dark-300">
+                    <SelectValue placeholder="Select a language" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dark-100 border-dark-300 max-h-[300px]">
+                    <SelectItem value="en-US">English (US)</SelectItem>
+                    <SelectItem value="en-GB">English (UK)</SelectItem>
+                    <SelectItem value="en-AU">English (Australia)</SelectItem>
+                    <SelectItem value="en-CA">English (Canada)</SelectItem>
+                    <SelectItem value="es-ES">Spanish (Spain)</SelectItem>
+                    <SelectItem value="es-MX">Spanish (Mexico)</SelectItem>
+                    <SelectItem value="fr-FR">French</SelectItem>
+                    <SelectItem value="de-DE">German</SelectItem>
+                    <SelectItem value="it-IT">Italian</SelectItem>
+                    <SelectItem value="pt-BR">Portuguese (Brazil)</SelectItem>
+                    <SelectItem value="pt-PT">Portuguese (Portugal)</SelectItem>
+                    <SelectItem value="zh-CN">Chinese (Mandarin)</SelectItem>
+                    <SelectItem value="ja-JP">Japanese</SelectItem>
+                    <SelectItem value="ko-KR">Korean</SelectItem>
+                    <SelectItem value="hi-IN">Hindi</SelectItem>
+                    <SelectItem value="ar-SA">Arabic</SelectItem>
+                    <SelectItem value="ru-RU">Russian</SelectItem>
+                    <SelectItem value="nl-NL">Dutch</SelectItem>
+                    <SelectItem value="sv-SE">Swedish</SelectItem>
+                    <SelectItem value="no-NO">Norwegian</SelectItem>
+                    <SelectItem value="da-DK">Danish</SelectItem>
+                    <SelectItem value="fi-FI">Finnish</SelectItem>
+                    <SelectItem value="pl-PL">Polish</SelectItem>
+                    <SelectItem value="tr-TR">Turkish</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-dark-500 text-xs mt-1.5">
+                  This will affect both voice recognition and AI narration language.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -14,6 +14,7 @@ import {
   Share2
 } from 'lucide-react';
 import LandscapePreviewCanvas from '@/components/LandscapePreviewCanvas';
+import CustomLandscapeUpload from '@/components/CustomLandscapeUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -213,7 +214,9 @@ const landscapeTemplates = [
 ];
 
 // Define categories for filtering
-const categories = [...new Set(landscapeTemplates.map(template => template.category))];
+const categoriesSet = new Set<string>();
+landscapeTemplates.forEach(template => categoriesSet.add(template.category));
+const categories = Array.from(categoriesSet);
 const soundscapes = ["peaceful", "mysterious", "dramatic", "cheerful", "melancholic"];
 
 const Landscapes: React.FC = () => {
@@ -229,6 +232,10 @@ const Landscapes: React.FC = () => {
   // State for preview
   const [previewLandscape, setPreviewLandscape] = useState<typeof landscapeTemplates[0] | null>(null);
   const [isPreviewActive, setIsPreviewActive] = useState(false);
+  
+  // State for custom upload
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [customLandscapes, setCustomLandscapes] = useState<typeof landscapeTemplates>([]);
   
   // Initialize multiple soundscapes
   const { 
@@ -269,8 +276,21 @@ const Landscapes: React.FC = () => {
     }
   }, [previewLandscape, isPreviewActive, changeSoundscape, isSoundscapePlaying, toggleSoundscape]);
   
+  // Combine built-in and custom landscapes
+  const allLandscapes = [...landscapeTemplates, ...customLandscapes];
+  
+  // Update category list if there are custom landscapes
+  useEffect(() => {
+    if (customLandscapes.length > 0) {
+      // Add "Custom" category if not already in the list
+      if (!categories.includes("Custom")) {
+        categoriesSet.add("Custom");
+      }
+    }
+  }, [customLandscapes]);
+  
   // Filter landscapes based on active tab, search query, category, and soundscape
-  const filteredLandscapes = landscapeTemplates.filter(landscape => {
+  const filteredLandscapes = allLandscapes.filter(landscape => {
     // Filter by tab
     if (activeTab === "featured" && !landscape.isFeatured) return false;
     if (activeTab === "favorites" && !favorites.includes(landscape.id)) return false;
@@ -358,11 +378,48 @@ const Landscapes: React.FC = () => {
     });
   };
   
-  // handle custom upload (simulation)
+  // Handle custom landscape upload
   const handleCustomUpload = () => {
+    setIsUploadModalOpen(true);
+  };
+  
+  // Handle creation of a new custom landscape
+  const handleCreateCustomLandscape = (newLandscape: {
+    name: string;
+    description: string;
+    thumbnailUrl: string;
+    soundscape: SoundscapeType;
+    colors: {
+      primary: string;
+      secondary: string;
+      accent: string;
+    }
+  }) => {
+    // Generate a new ID based on existing landscapes
+    const newId = Math.max(...[...landscapeTemplates, ...customLandscapes].map(l => l.id)) + 1;
+    
+    // Create the new landscape object
+    const customLandscape = {
+      id: newId,
+      name: newLandscape.name,
+      description: newLandscape.description,
+      category: "Custom",
+      soundscape: newLandscape.soundscape,
+      thumbnailUrl: newLandscape.thumbnailUrl,
+      isFeatured: false,
+      colors: newLandscape.colors
+    };
+    
+    // Add to custom landscapes
+    setCustomLandscapes(prev => [...prev, customLandscape]);
+    
+    // Automatically add to favorites
+    setFavorites(prev => [...prev, newId]);
+    
+    // Show success message
     toast({
-      title: "Upload functionality",
-      description: "Custom landscape upload feature will be available in the next update!",
+      title: "Custom landscape created",
+      description: `Your landscape "${newLandscape.name}" has been added to your collection.`,
     });
   };
   
