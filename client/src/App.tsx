@@ -11,6 +11,7 @@ import LandingPage from "@/pages/LandingPage";
 import Explore from "@/pages/Explore";
 import Landscapes from "@/pages/Landscapes";
 import UserAnimations from "@/pages/UserAnimations";
+import LandscapePlayerPage from "@/pages/LandscapePlayerPage";
 
 function Router() {
   return (
