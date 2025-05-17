@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
 
 // Define possible soundscape types
-export type SoundscapeType = 'peaceful' | 'mysterious' | 'dramatic' | 'cheerful' | 'melancholic';
+export type SoundscapeType = 'peaceful' | 'mysterious' | 'dramatic' | 'cheerful' | 'melancholic' | 'cosmic' | 'galactic';
 
 interface SoundscapeOptions {
   initialType: SoundscapeType;

@@ -10,7 +10,7 @@ interface LandscapePreviewCanvasProps {
     secondary: string;
     accent: string;
   };
-  soundscapeType: 'peaceful' | 'mysterious' | 'dramatic' | 'cheerful' | 'melancholic';
+  soundscapeType: 'peaceful' | 'mysterious' | 'dramatic' | 'cheerful' | 'melancholic' | 'cosmic' | 'galactic';
   isActive: boolean;
 }
 
@@ -79,6 +79,8 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       const isMountainous = soundscapeType === 'dramatic' || soundscapeType === 'peaceful';
       const isFlowing = soundscapeType === 'mysterious' || soundscapeType === 'cheerful';
       const useBlend = soundscapeType === 'melancholic';
+      const isGalactic = soundscapeType === 'galactic';
+      const isCosmic = soundscapeType === 'cosmic';
       
       // Color objects - initialized in setup
       let primaryColor: any = null;
