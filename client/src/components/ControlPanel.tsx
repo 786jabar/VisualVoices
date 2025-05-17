@@ -61,6 +61,7 @@ interface ControlPanelProps {
   onToggleAudio: () => void;
   colorIntensity: boolean;
   motion: boolean;
+  onCollaborationToggle?: () => void;
 }
 
 // Add sentimentScore, colorIntensity, and motion to props

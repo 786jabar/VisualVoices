@@ -13,6 +13,7 @@ import SocialShareModal from '@/components/SocialShareModal';
 import DashboardLandscapes from '@/components/DashboardLandscapes';
 import CreativitySparkButton from '@/components/CreativitySparkButton';
 import TransformationToast from '@/components/TransformationToast';
+import CollaborativeVisualizer from '@/components/CollaborativeVisualizer';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { use3DAudio } from '@/hooks/use3DAudio';
@@ -31,6 +32,7 @@ export default function Home() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCollaborationActive, setIsCollaborationActive] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string>('');
   
   // Define settings type
@@ -475,6 +477,7 @@ export default function Home() {
               onToggleAudio={handleToggleAudio}
               colorIntensity={settings.colorIntensity}
               motion={settings.motionEffects}
+              onCollaborationToggle={() => setIsCollaborationActive(!isCollaborationActive)}
             />
           </div>
         </div>
