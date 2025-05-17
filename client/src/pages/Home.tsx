@@ -267,7 +267,7 @@ export default function Home() {
   }, [browserSupportsSpeechRecognition, toast]);
   
   return (
-    <div className="relative h-screen flex flex-col overflow-hidden bg-black text-white">
+    <div className="relative min-h-screen w-full flex flex-col overflow-hidden bg-black text-white">
       {/* Header */}
       <Header 
         onHelpClick={() => setIsHelpModalOpen(true)}
@@ -277,7 +277,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Background Landscapes - rotates landscapes every 15 seconds */}
-        <div className="fixed inset-0 w-full h-full z-0">
+        <div className="fixed inset-0 w-full h-full z-0" id="dashboard-landscape-container">
           <DashboardLandscapes isActive={!isListening && !transcript} />
         </div>
         

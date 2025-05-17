@@ -109,11 +109,12 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
   }, []);
 
   return (
-    <div className={`relative w-full h-full overflow-hidden ${className}`}>
+    <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ minHeight: '100vh' }}>
       {/* Current landscape */}
       <div 
         className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
-        style={{ minHeight: '300px' }}
+        style={{ minHeight: '100%', minWidth: '100%' }}
+        id="current-landscape-container"
       >
         <LandscapePreviewCanvas
           colors={currentLandscape.colors}
@@ -126,7 +127,8 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
       {nextLandscape && (
         <div 
           className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}
-          style={{ minHeight: '300px' }}
+          style={{ minHeight: '100%', minWidth: '100%' }}
+          id="next-landscape-container"
         >
           <LandscapePreviewCanvas
             colors={nextLandscape.colors}

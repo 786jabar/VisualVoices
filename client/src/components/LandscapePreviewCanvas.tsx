@@ -47,6 +47,8 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
     // Only create new instance if none exists and container is ready
     if (!canvasRef.current) return;
     
+    console.log(`Creating landscape canvas for ${soundscapeType} landscape. isActive:`, isActive);
+    
     // If a p5 instance already exists, remove it before creating a new one
     if (p5InstanceRef.current) {
       try {
@@ -75,6 +77,10 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       let flowField: p5.Vector[] = [];
       const scl = 20;
       
+      // Canvas dimensions
+      let canvasWidth = 0;
+      let canvasHeight = 0;
+      
       // Landscape style flags
       const isMountainous = soundscapeType === 'dramatic' || soundscapeType === 'peaceful';
       const isFlowing = soundscapeType === 'mysterious' || soundscapeType === 'cheerful';
@@ -86,6 +92,8 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       let primaryColor: any = null;
       let secondaryColor: any = null;
       let accentColor: any = null;
+      
+      console.log(`Setting up ${soundscapeType} landscape`);
 
       // Initialize particles for atmospheric effects
       function initializeParticles() {
@@ -287,13 +295,25 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         if (!canvasRef.current) return;
         
         try {
+          console.log("Setting up landscape canvas:", soundscapeType);
+          
+          // Force clear any existing canvas to prevent stacking
+          if (canvasRef.current) {
+            while (canvasRef.current.firstChild) {
+              canvasRef.current.removeChild(canvasRef.current.firstChild);
+            }
+          }
+          
           // Create canvas that fills the container div with error handling
           let canvasWidth = 300, canvasHeight = 200;
           
           // Make sure we get valid dimensions
           if (canvasRef.current) {
-            canvasWidth = canvasRef.current.clientWidth || 300;
-            canvasHeight = canvasRef.current.clientHeight || 200;
+            canvasWidth = canvasRef.current.offsetWidth || 300;
+            canvasHeight = canvasRef.current.offsetHeight || 200;
+            
+            // Log dimensions for debugging
+            console.log(`Canvas dimensions: ${canvasWidth}x${canvasHeight}`);
             
             // Ensure minimum size to prevent rendering issues
             canvasWidth = Math.max(canvasWidth, 100);
@@ -302,6 +322,10 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           
           // Create canvas with proper error handling
           const canvas = p.createCanvas(canvasWidth, canvasHeight, p.WEBGL);
+          
+          // Set the canvas to fill its container
+          canvas.style('width', '100%');
+          canvas.style('height', '100%');
           
           // Only attach to parent if it exists
           if (canvasRef.current) {
