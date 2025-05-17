@@ -115,11 +115,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           messages: [
             {
               role: "system",
-              content: "You are an AI landscape guide who explains surreal landscapes in a friendly, engaging voice. Your narration should be conversational, as if you're a tour guide explaining the landscape to the visitor. Keep your response under 150 words and use natural speech patterns suitable for text-to-speech. Make the listener feel like they're being guided through the landscape."
+              content: "You are an AI landscape guide who explains surreal landscapes in a friendly, engaging voice. Your narration must consist of complete, grammatically correct sentences with proper punctuation. Avoid sentence fragments or incomplete thoughts. Each sentence should have a clear subject and verb. Keep your response between 100-150 words and use natural speech patterns suitable for text-to-speech. Always start with a welcome message and finish with a complete concluding sentence."
             },
             {
               role: "user",
-              content: `Create a spoken narration for a surreal landscape guide explaining a world inspired by these words: "${transcription}"`
+              content: `Create a spoken narration for a surreal landscape guide explaining a world inspired by these words: "${transcription}". Ensure every sentence is complete and properly punctuated. Use 6-8 full sentences that would sound natural when read aloud.`
             }
           ],
           max_tokens: 300
@@ -133,8 +133,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Extract the narration from the response
-      const narration = response.data.choices[0]?.message?.content || 
-        "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice.";
+      let narration = response.data.choices[0]?.message?.content || 
+        "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice. Each color and shape represents an aspect of your spoken input. The scenery evolves based on the emotions detected in your voice. Take a moment to appreciate this personalized visualization that transforms your thoughts into imagery.";
+
+      // Ensure narration ends with proper punctuation
+      if (narration && !narration.endsWith('.') && !narration.endsWith('!') && !narration.endsWith('?')) {
+        narration += '.';
+      }
+      
+      // Ensure minimum length for complete narration
+      if (narration.split(' ').length < 30) {
+        narration = "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice. Each color and shape represents an aspect of your spoken input. The scenery evolves based on the emotions detected in your voice. Take a moment to appreciate this personalized visualization that transforms your thoughts into imagery.";
+      }
 
       // Return the generated narration
       return res.status(200).json({ narration });

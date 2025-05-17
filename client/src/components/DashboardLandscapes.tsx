@@ -109,11 +109,17 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
   }, []);
 
   return (
-    <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ minHeight: '100vh' }}>
-      {/* Current landscape */}
+    <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ minHeight: '100vh', zIndex: 0 }}>
+      {/* Current landscape - forcibly visible with important styles */}
       <div 
         className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
-        style={{ minHeight: '100%', minWidth: '100%' }}
+        style={{ 
+          minHeight: '100%', 
+          minWidth: '100%', 
+          display: 'block',
+          visibility: 'visible',
+          zIndex: 1
+        }}
         id="current-landscape-container"
       >
         <LandscapePreviewCanvas
@@ -127,7 +133,13 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
       {nextLandscape && (
         <div 
           className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}
-          style={{ minHeight: '100%', minWidth: '100%' }}
+          style={{ 
+            minHeight: '100%', 
+            minWidth: '100%',
+            display: 'block',
+            visibility: 'visible',
+            zIndex: 2
+          }}
           id="next-landscape-container"
         >
           <LandscapePreviewCanvas

@@ -905,20 +905,463 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       
       console.log(`Setting up ${soundscapeType} landscape`);
       
-      // All the existing functions: initializeParticles, createFlowField, refreshTerrain, etc...
-      // Left unchanged for brevity, but still part of this function
-      
-      // Setup and draw functions are unchanged
-      
-      // Use all the functions defined in the original sketch
+      // Setup function
       p.setup = () => {
         if (!canvasRef.current) return;
+        
         console.log("Setting up p5 canvas for", soundscapeType);
-        // Rest of setup
+        
+        // Get container dimensions
+        const parentWidth = canvasRef.current.clientWidth || window.innerWidth;
+        const parentHeight = canvasRef.current.clientHeight || window.innerHeight;
+        
+        canvasWidth = parentWidth;
+        canvasHeight = parentHeight;
+        
+        console.log("Canvas dimensions:", canvasWidth + "x" + canvasHeight);
+        
+        // Create canvas sized to container - force display
+        p.createCanvas(canvasWidth, canvasHeight, p.WEBGL);
+        
+        // Initialize colors from props
+        primaryColor = p.color(colors.primary);
+        secondaryColor = p.color(colors.secondary);
+        accentColor = p.color(colors.accent);
+        
+        // Initialize particles
+        initializeParticles();
+        
+        // Set frame rate to stabilize performance
+        p.frameRate(30);
       };
       
+      // Function to initialize particles
+      function initializeParticles() {
+        particles.length = 0;
+        
+        for (let i = 0; i < numParticles; i++) {
+          // Common particle properties
+          let pos;
+          let vel;
+          let particleColor;
+          let particleSize;
+          let particleAlpha;
+          let particleType;
+          
+          if (isGalactic) {
+            // For galactic landscapes, create orbiting particles
+            const angle = p.random(p.TWO_PI);
+            const radius = p.random(50, 300);
+            
+            pos = p.createVector(
+              p.cos(angle) * radius,
+              p.sin(angle) * radius,
+              p.random(-50, 50)
+            );
+            
+            vel = p.createVector(
+              p.random(-0.2, 0.2),
+              p.random(-0.2, 0.2),
+              p.random(-0.1, 0.1)
+            );
+            
+            try {
+              // Galactic colors
+              if (p.random() > 0.8) {
+                // Stars
+                particleColor = p.color(255, 255, 255);
+                particleSize = p.random(1, 3);
+                particleType = 'star';
+              } else {
+                // Nebula colors
+                particleColor = p.lerpColor(
+                  primaryColor,
+                  accentColor,
+                  p.random()
+                );
+                particleSize = p.random(1, 3);
+                particleType = 'whitestar';
+              }
+            } catch (err) {
+              particleColor = p.color(200, 200, 255);
+              particleSize = p.random(1, 3);
+              particleType = 'default';
+            }
+            
+            particleAlpha = p.random(150, 230);
+            
+          } else if (isCosmic) {
+            // For cosmic landscapes, create a nebula with dust and stars
+            pos = p.createVector(
+              p.random(-p.width/2, p.width/2),
+              p.random(-p.height/2, p.height/2),
+              p.random(-80, 80)
+            );
+            
+            vel = p.createVector(
+              p.random(-0.5, 0.5) * 0.2,
+              p.random(-0.5, 0.5) * 0.2,
+              p.random(-0.1, 0.1) * 0.1
+            );
+            
+            // Colors for nebula particles
+            try {
+              const nebulaType = p.random();
+              if (nebulaType > 0.7) {
+                // Purple/blue nebula dust
+                particleColor = p.color(80, 50, 120);
+                particleType = 'nebuladust';
+                particleSize = p.random(5, 12);
+                particleAlpha = p.random(30, 100); // More transparent
+              } else if (nebulaType > 0.4) {
+                // Red/orange nebula dust
+                particleColor = p.color(180, 60, 30);
+                particleType = 'nebuladust';
+                particleSize = p.random(4, 10);
+                particleAlpha = p.random(30, 100); // More transparent
+              } else {
+                // Stars within the nebula
+                particleColor = p.color(255, 255, 255);
+                particleType = 'star';
+                particleSize = p.random(1, 3);
+                particleAlpha = p.random(150, 250); // Brighter
+              }
+            } catch (err) {
+              particleColor = p.color(150, 150, 200);
+              particleType = 'default';
+              particleSize = p.random(2, 6);
+              particleAlpha = p.random(100, 200);
+            }
+          } else {
+            // Regular landscape particles
+            pos = p.createVector(
+              p.random(-p.width/2, p.width/2),
+              p.random(-p.height/2, p.height/2),
+              p.random(-100, 100)
+            );
+            
+            vel = p.createVector(
+              p.random(-1, 1) * 0.3,
+              p.random(-1, 1) * 0.3,
+              p.random(-0.5, 0.5) * 0.4
+            );
+            
+            try {
+              particleColor = p.lerpColor(
+                primaryColor, 
+                accentColor, 
+                p.random()
+              );
+            } catch (err) {
+              particleColor = p.color(150, 150, 200);
+            }
+            
+            particleSize = p.random(2, 6);
+            particleAlpha = p.random(100, 200);
+            particleType = 'regular';
+          }
+          
+          // Add the particle with all properties
+          particles.push({
+            pos: pos,
+            vel: vel,
+            size: particleSize || p.random(2, 6),
+            color: particleColor,
+            alpha: particleAlpha || p.random(100, 200),
+            type: particleType || 'regular',
+            // Additional properties for special particles
+            orbitAngle: p.random(p.TWO_PI), // Starting angle for orbital motion
+            pulseFactor: p.random(0.01, 0.05), // For pulsating stars
+            pulseSpeed: p.random(0.02, 0.06) // Speed of pulsation
+          });
+        }
+      }
+      
+      // Draw function
       p.draw = () => {
-        // Existing draw function
+        if (!isActive) return;
+        
+        // Clear background
+        p.background(0, 0, 0);
+        
+        // Set basic viewing angle
+        p.translate(0, 0, -200);
+        p.rotateX(p.PI * 0.2);
+        
+        // Different landscape types have different visual styles
+        if (isGalactic) {
+          drawGalacticLandscape();
+        } else if (isCosmic) {
+          drawCosmicLandscape();
+        } else if (isMountainous) {
+          drawMountainousLandscape();
+        } else if (isFlowing) {
+          drawFlowingLandscape();
+        } else if (useBlend) {
+          drawDefaultLandscape(); // Fallback
+        } else {
+          drawDefaultLandscape();
+        }
+      };
+      
+      // Specialized landscape drawing functions
+      function drawGalacticLandscape() {
+        p.background(0, 2, 15);
+        
+        // Draw stars
+        for (let i = 0; i < 200; i++) {
+          const x = p.random(-canvasWidth, canvasWidth);
+          const y = p.random(-canvasHeight, canvasHeight);
+          const z = p.random(-400, -100);
+          
+          p.push();
+          p.translate(x, y, z);
+          p.fill(255, p.random(100, 200));
+          p.noStroke();
+          p.ellipse(0, 0, p.random(1, 2), p.random(1, 2));
+          p.pop();
+        }
+        
+        // Draw galactic center
+        p.push();
+        p.translate(0, 0, -50);
+        p.noStroke();
+        
+        // Galaxy core
+        for (let i = 0; i < 5; i++) {
+          const size = p.map(i, 0, 5, 100, 20);
+          const alpha = p.map(i, 0, 5, 100, 20);
+          p.fill(p.red(accentColor), p.green(accentColor), p.blue(accentColor), alpha);
+          p.ellipse(0, 0, size, size);
+        }
+        p.pop();
+        
+        // Draw particles
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          
+          // Update particle position with slight movement
+          particle.orbitAngle += 0.002;
+          particle.pos.x = p.cos(particle.orbitAngle) * (particle.pos.x < 0 ? -1 : 1) * 
+                          p.abs(particle.pos.x);
+          particle.pos.y = p.sin(particle.orbitAngle) * (particle.pos.y < 0 ? -1 : 1) * 
+                          p.abs(particle.pos.y);
+          
+          // Draw particle
+          p.push();
+          p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+          p.noStroke();
+          p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), particle.alpha);
+          
+          if (particle.type === 'star') {
+            // Stars pulse
+            const pulse = p.sin(p.frameCount * particle.pulseSpeed) * particle.pulseFactor;
+            p.ellipse(0, 0, particle.size * (1 + pulse), particle.size * (1 + pulse));
+          } else {
+            p.ellipse(0, 0, particle.size, particle.size);
+          }
+          p.pop();
+        }
+      }
+      
+      function drawCosmicLandscape() {
+        p.background(10, 5, 25);
+        
+        // Draw nebula background
+        p.push();
+        p.noStroke();
+        for (let i = 0; i < 3; i++) {
+          p.fill(p.red(secondaryColor), p.green(secondaryColor), p.blue(secondaryColor), 5);
+          const size = 300 + i * 50;
+          p.ellipse(0, 0, size, size);
+        }
+        p.pop();
+        
+        // Draw particles
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          
+          // Update particle position
+          const noiseVal = p.noise(particle.pos.x * 0.01, particle.pos.y * 0.01, p.frameCount * 0.01);
+          const angle = noiseVal * p.TWO_PI;
+          
+          particle.vel.x += p.cos(angle) * 0.05;
+          particle.vel.y += p.sin(angle) * 0.05;
+          particle.vel.mult(0.95);
+          particle.pos.add(particle.vel);
+          
+          // Boundary check with wrapping
+          if (particle.pos.x < -canvasWidth/2) particle.pos.x = canvasWidth/2;
+          if (particle.pos.x > canvasWidth/2) particle.pos.x = -canvasWidth/2;
+          if (particle.pos.y < -canvasHeight/2) particle.pos.y = canvasHeight/2;
+          if (particle.pos.y > canvasHeight/2) particle.pos.y = -canvasHeight/2;
+          
+          // Draw particle based on type
+          p.push();
+          p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+          p.noStroke();
+          
+          if (particle.type === 'nebuladust') {
+            // Draw nebula dust with blur effect
+            for (let j = 0; j < 3; j++) {
+              const fadeAlpha = particle.alpha * (1 - j * 0.3);
+              const fadeSize = particle.size * (1 + j * 0.5);
+              p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), fadeAlpha);
+              p.ellipse(0, 0, fadeSize, fadeSize);
+            }
+          } else {
+            // Draw normal particles/stars
+            p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), particle.alpha);
+            p.ellipse(0, 0, particle.size, particle.size);
+          }
+          p.pop();
+        }
+      }
+      
+      function drawMountainousLandscape() {
+        // Simple mountains background
+        p.background(p.red(primaryColor), p.green(primaryColor), p.blue(primaryColor));
+        
+        // Draw distant mountains
+        p.push();
+        p.noStroke();
+        p.fill(p.red(secondaryColor), p.green(secondaryColor), p.blue(secondaryColor), 150);
+        
+        p.beginShape();
+        p.vertex(-canvasWidth/2, canvasHeight/2);
+        
+        for (let x = -canvasWidth/2; x <= canvasWidth/2; x += 20) {
+          const xOffset = p.map(x, -canvasWidth/2, canvasWidth/2, 0, 10);
+          const y = p.map(p.noise(xOffset * 0.1, p.frameCount * 0.001), 0, 1, 0, -canvasHeight/2);
+          p.vertex(x, y);
+        }
+        
+        p.vertex(canvasWidth/2, canvasHeight/2);
+        p.endShape(p.CLOSE);
+        p.pop();
+        
+        // Draw particles
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          
+          // Update particle position
+          particle.vel.add(p.random(-0.05, 0.05), p.random(-0.05, 0.05), p.random(-0.02, 0.02));
+          particle.vel.mult(0.95);
+          particle.pos.add(particle.vel);
+          
+          // Boundary check with wrapping
+          if (particle.pos.x < -canvasWidth/2) particle.pos.x = canvasWidth/2;
+          if (particle.pos.x > canvasWidth/2) particle.pos.x = -canvasWidth/2;
+          if (particle.pos.y < -canvasHeight/2) particle.pos.y = canvasHeight/2;
+          if (particle.pos.y > canvasHeight/2) particle.pos.y = -canvasHeight/2;
+          
+          // Draw particle
+          p.push();
+          p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+          p.noStroke();
+          p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), particle.alpha);
+          p.ellipse(0, 0, particle.size, particle.size);
+          p.pop();
+        }
+      }
+      
+      function drawFlowingLandscape() {
+        p.background(p.red(primaryColor), p.green(primaryColor), p.blue(primaryColor));
+        
+        // Draw flowing landscape elements
+        p.push();
+        p.noFill();
+        p.stroke(p.red(secondaryColor), p.green(secondaryColor), p.blue(secondaryColor), 100);
+        p.strokeWeight(1);
+        
+        for (let y = -canvasHeight/2; y < canvasHeight/2; y += 30) {
+          p.beginShape();
+          for (let x = -canvasWidth/2; x <= canvasWidth/2; x += 10) {
+            const xOffset = p.map(x, -canvasWidth/2, canvasWidth/2, 0, 10);
+            const yOffset = p.map(y, -canvasHeight/2, canvasHeight/2, 0, 10);
+            const waveHeight = p.map(p.noise(xOffset * 0.1, yOffset * 0.1, p.frameCount * 0.01), 0, 1, -20, 20);
+            p.vertex(x, y + waveHeight);
+          }
+          p.endShape();
+        }
+        p.pop();
+        
+        // Draw particles with trails
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          
+          // Update particle position with flow field effect
+          const xOffset = p.map(particle.pos.x, -canvasWidth/2, canvasWidth/2, 0, 10);
+          const yOffset = p.map(particle.pos.y, -canvasHeight/2, canvasHeight/2, 0, 10);
+          const angle = p.noise(xOffset * 0.1, yOffset * 0.1, p.frameCount * 0.01) * p.TWO_PI;
+          
+          particle.vel.add(p.cos(angle) * 0.1, p.sin(angle) * 0.1, 0);
+          particle.vel.mult(0.95);
+          particle.pos.add(particle.vel);
+          
+          // Boundary check with wrapping
+          if (particle.pos.x < -canvasWidth/2) particle.pos.x = canvasWidth/2;
+          if (particle.pos.x > canvasWidth/2) particle.pos.x = -canvasWidth/2;
+          if (particle.pos.y < -canvasHeight/2) particle.pos.y = canvasHeight/2;
+          if (particle.pos.y > canvasHeight/2) particle.pos.y = -canvasHeight/2;
+          
+          // Draw particle with trail
+          p.push();
+          p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+          
+          // Trail
+          p.stroke(p.red(particle.color), p.green(particle.color), p.blue(particle.color), particle.alpha * 0.5);
+          p.strokeWeight(1);
+          p.line(0, 0, -particle.vel.x * 10, -particle.vel.y * 10);
+          
+          // Particle
+          p.noStroke();
+          p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), particle.alpha);
+          p.ellipse(0, 0, particle.size, particle.size);
+          p.pop();
+        }
+      }
+      
+      function drawDefaultLandscape() {
+        p.background(p.red(primaryColor), p.green(primaryColor), p.blue(primaryColor));
+        
+        // Draw particles
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          
+          // Simple particle movement
+          particle.vel.add(p.random(-0.02, 0.02), p.random(-0.02, 0.02), p.random(-0.01, 0.01));
+          particle.vel.mult(0.98);
+          particle.pos.add(particle.vel);
+          
+          // Boundary check with wrapping
+          if (particle.pos.x < -canvasWidth/2) particle.pos.x = canvasWidth/2;
+          if (particle.pos.x > canvasWidth/2) particle.pos.x = -canvasWidth/2;
+          if (particle.pos.y < -canvasHeight/2) particle.pos.y = canvasHeight/2;
+          if (particle.pos.y > canvasHeight/2) particle.pos.y = -canvasHeight/2;
+          
+          // Draw particle
+          p.push();
+          p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+          p.noStroke();
+          p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), particle.alpha);
+          p.ellipse(0, 0, particle.size, particle.size);
+          p.pop();
+        }
+      }
+      
+      // Handle window resizing
+      p.windowResized = () => {
+        if (!canvasRef.current) return;
+        
+        const parentWidth = canvasRef.current.clientWidth;
+        const parentHeight = canvasRef.current.clientHeight;
+        
+        if (parentWidth > 0 && parentHeight > 0) {
+          p.resizeCanvas(parentWidth, parentHeight);
+          canvasWidth = parentWidth;
+          canvasHeight = parentHeight;
+        }
       };
     };
   }, [colors, soundscapeType, isActive]);
