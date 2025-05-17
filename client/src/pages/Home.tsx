@@ -217,6 +217,18 @@ export default function Home() {
     }
   };
   
+  // Handle theme change
+  const handleThemeChange = (theme: VisualizationTheme) => {
+    setCurrentThemeId(theme.id);
+    setTransformedColors(theme.colors);
+    
+    // Show a toast notification for the theme change
+    toast({
+      title: 'Theme Changed',
+      description: `Applied '${theme.name}' theme`,
+    });
+  };
+  
   // Handle share visualization
   const handleShare = () => {
     try {
