@@ -114,6 +114,34 @@ export default function GalleryItemPage() {
     }
   }, [galleryItem, isSoundscapeInitialized, changeSoundscape]);
   
+  // Auto-play audio when the page loads and gallery item is available
+  useEffect(() => {
+    if (galleryItem && isSoundscapeInitialized && !isAudioEnabled) {
+      // This ensures audio starts automatically when viewing the gallery item
+      const startAudioPlayback = async () => {
+        const granted = requestPlayback();
+        
+        if (granted) {
+          setIsAudioEnabled(true);
+          
+          // Add a small delay to ensure the audio context is fully initialized
+          setTimeout(async () => {
+            if (!isSoundscapePlaying) {
+              try {
+                await toggleSoundscape();
+                console.log('Gallery audio playback started automatically');
+              } catch (error) {
+                console.error('Error starting gallery audio:', error);
+              }
+            }
+          }, 500);
+        }
+      };
+      
+      startAudioPlayback();
+    }
+  }, [galleryItem, isSoundscapeInitialized, isAudioEnabled, isSoundscapePlaying, requestPlayback, toggleSoundscape]);
+  
   // Handle audio toggling
   const handleToggleAudio = async () => {
     if (isAudioEnabled) {
