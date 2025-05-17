@@ -576,7 +576,91 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
               a = particle.alpha || 150;
             }
             
-            if (soundscapeType === 'mysterious') {
+            // Special rendering for different particle types in Galaxy modes
+            if (isGalactic || isCosmic) {
+              // Apply different rendering based on particle type
+              if (particle.type === 'redgiant') {
+                // Red giant stars - larger with glow effect
+                const glowSize = (particle.size || 4) * (1.5 + p.sin(p.frameCount * 0.03) * 0.2);
+                
+                // Outer glow
+                p.fill(255, 100, 50, 40);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                p.ellipse(0, 0, glowSize * 3);
+                p.pop();
+                
+                // Inner star
+                p.fill(255, 100, 50, 180);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                p.ellipse(0, 0, glowSize);
+                p.pop();
+              } 
+              else if (particle.type === 'bluestar') {
+                // Blue star with shimmer
+                const shimmerFactor = 1 + p.sin(p.frameCount * 0.05 + i * 0.1) * 0.3;
+                p.fill(100, 150, 255, 180 * shimmerFactor);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                p.ellipse(0, 0, particle.size || 3);
+                
+                // Add rays for blue stars
+                if (shimmerFactor > 1.2) {
+                  p.stroke(100, 150, 255, 100);
+                  p.strokeWeight(0.5);
+                  for (let ray = 0; ray < 4; ray++) {
+                    const angle = ray * p.PI/2;
+                    const length = (particle.size || 3) * 2.5;
+                    p.line(0, 0, p.cos(angle) * length, p.sin(angle) * length);
+                  }
+                }
+                p.pop();
+              }
+              else if (particle.type === 'yellowstar') {
+                // Yellow sun-like star
+                p.fill(255, 230, 150, 170);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                p.ellipse(0, 0, particle.size || 2.5);
+                p.pop();
+              }
+              else if (particle.type === 'whitestar') {
+                // Small white stars
+                const twinkleFactor = 0.7 + p.noise(particle.pos.x * 0.1, particle.pos.y * 0.1, p.frameCount * 0.01) * 0.6;
+                p.fill(240, 240, 255, 150 * twinkleFactor);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                p.ellipse(0, 0, (particle.size || 1.5) * twinkleFactor);
+                p.pop();
+              }
+              else if (particle.type === 'nebuladust') {
+                // Nebula dust clouds - semi-transparent
+                p.fill(r, g, b, (a || 100) * 0.5);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                // Draw cloud-like shape
+                p.beginShape();
+                const cloudSize = particle.size || 8;
+                for (let j = 0; j < 8; j++) {
+                  const angle = j * p.TWO_PI / 8;
+                  const radius = cloudSize * (0.7 + p.noise(p.frameCount * 0.01, j * 0.3) * 0.6);
+                  p.vertex(p.cos(angle) * radius, p.sin(angle) * radius);
+                }
+                p.endShape(p.CLOSE);
+                p.pop();
+              }
+              else {
+                // Default cosmic particles
+                p.fill(r || 200, g || 200, b || 255, a || 120);
+                p.push();
+                p.translate(particle.pos.x, particle.pos.y, particle.pos.z);
+                p.ellipse(0, 0, particle.size || 2);
+                p.pop();
+              }
+            }
+            // Original particle types for other soundscapes
+            else if (soundscapeType === 'mysterious') {
               // Mysterious particles as cubes with pulsing transparency
               p.fill(
                 r || 100, 

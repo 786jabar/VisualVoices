@@ -200,6 +200,62 @@ const landscapeTemplates = [
   },
   {
     id: 12,
+    name: "Spiral Galaxy",
+    description: "A vast spiral galaxy with swirling arms of stars and cosmic dust",
+    category: "Cosmic",
+    soundscape: "galactic" as SoundscapeType,
+    thumbnailUrl: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1000",
+    isFeatured: true,
+    colors: {
+      primary: "#0a0a2a",
+      secondary: "#2d2d7c",
+      accent: "#5e72eb"
+    }
+  },
+  {
+    id: 13,
+    name: "Nebula Expanse",
+    description: "A colorful cosmic cloud where new stars are born amid swirling gas and dust",
+    category: "Cosmic",
+    soundscape: "cosmic" as SoundscapeType,
+    thumbnailUrl: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1000",
+    isFeatured: true,
+    colors: {
+      primary: "#3c096c",
+      secondary: "#7b2cbf",
+      accent: "#e0aaff"
+    }
+  },
+  {
+    id: 14,
+    name: "Galactic Core",
+    description: "The dense center of a galaxy with millions of stars orbiting a supermassive black hole",
+    category: "Cosmic",
+    soundscape: "galactic" as SoundscapeType,
+    thumbnailUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000",
+    isFeatured: false,
+    colors: {
+      primary: "#16213e",
+      secondary: "#3a4f7a",
+      accent: "#f6c90e"
+    }
+  },
+  {
+    id: 15,
+    name: "Cosmic Void",
+    description: "The vast emptiness between galactic filaments, with distant galaxy clusters visible as tiny specks",
+    category: "Cosmic",
+    soundscape: "cosmic" as SoundscapeType,
+    thumbnailUrl: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1000",
+    isFeatured: false,
+    colors: {
+      primary: "#03071e",
+      secondary: "#240046",
+      accent: "#9d4edd"
+    }
+  },
+  {
+    id: 16,
     name: "Quantum Particle Realm",
     description: "The microscopic world of subatomic particles visualized as a colorful abstract landscape",
     category: "Abstract",
