@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LandscapePreviewCanvas from './LandscapePreviewCanvas';
-import { SoundscapeType } from '@/hooks/useMultipleSoundscapes';
+import { SoundscapeType } from '@/hooks/stableSoundscapes';
 
 // Pre-defined landscape settings for the dashboard carousel
 const DASHBOARD_LANDSCAPES = [

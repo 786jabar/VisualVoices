@@ -959,7 +959,9 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       style={{ 
         minHeight: '100vh', 
         position: 'relative',
-        background: 'rgba(0,0,0,0.2)'
+        background: 'rgba(0,0,0,0.2)',
+        display: 'block', 
+        visibility: 'visible'
       }}
       data-landscape-type={soundscapeType}
       data-active={isActive.toString()}
