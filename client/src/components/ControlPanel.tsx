@@ -8,6 +8,7 @@ import {
   getSentimentEmoji, 
   getSentimentDescription 
 } from '@/lib/utils';
+import VisualizationThemeToggle, { VisualizationTheme } from '@/components/VisualizationThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, generateNarration } from '@/lib/queryClient';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
@@ -64,6 +65,8 @@ interface ControlPanelProps {
   motion: boolean;
   onCollaborationToggle?: () => void;
   onClearSummary?: () => void; // Added clear summary handler
+  currentThemeId?: string; // Current theme ID
+  onThemeChange?: (theme: VisualizationTheme) => void; // Theme change handler
 }
 
 // Add sentimentScore, colorIntensity, and motion to props
@@ -83,7 +86,9 @@ const ControlPanel: FC<ControlPanelProps> = ({
   colorIntensity,
   motion,
   onCollaborationToggle,
-  onClearSummary
+  onClearSummary,
+  currentThemeId,
+  onThemeChange
 }) => {
   const { toast } = useToast();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
