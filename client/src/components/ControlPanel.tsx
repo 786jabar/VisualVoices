@@ -377,14 +377,17 @@ const ControlPanel: FC<ControlPanelProps> = ({
       </div>
       
       {/* Current Transcription */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium text-white">Your Speech</h3>
+      <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-white flex items-center">
+            <MessageSquare className="h-4 w-4 mr-2 text-indigo-400" />
+            Your Speech
+          </h3>
           {sentiment && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getSentimentColorClass(sentiment)}`}>
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-semibold shadow-md ${getSentimentColorClass(sentiment)}`}>
                     {getSentimentEmoji(sentiment)} {sentiment}
                   </span>
                 </TooltipTrigger>
@@ -396,7 +399,7 @@ const ControlPanel: FC<ControlPanelProps> = ({
           )}
         </div>
         
-        <div className="rounded-lg bg-gray-800/50 border border-gray-700 p-4 min-h-[100px] mb-4 text-sm">
+        <div className="rounded-lg bg-gray-800/70 border border-gray-700/50 p-5 min-h-[120px] mb-5 text-sm shadow-inner">
           {transcription ? (
             <p className="text-gray-200">{transcription}</p>
           ) : (
@@ -406,9 +409,9 @@ const ControlPanel: FC<ControlPanelProps> = ({
         
         {/* Poetic Summary (Hidden until generated) */}
         {poeticSummary && (
-          <div className="rounded-lg bg-gray-800/60 p-4 border border-gray-700 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium text-white flex items-center">
+          <div className="rounded-lg bg-gray-800/80 p-5 border border-indigo-900/40 mb-5 shadow-lg">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center">
                 <span className="mr-2">✨ Poetic Interpretation</span>
               </h3>
               <TooltipProvider>
@@ -430,9 +433,9 @@ const ControlPanel: FC<ControlPanelProps> = ({
         
         {/* AI Narration */}
         {narration && (
-          <div className="rounded-lg bg-indigo-900/30 p-4 border border-indigo-800/40 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium text-white flex items-center">
+          <div className="rounded-lg bg-indigo-900/40 p-5 border border-indigo-800/50 mb-5 shadow-lg">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center">
                 <MessageSquare className="h-4 w-4 mr-2 text-indigo-400" />
                 <span>AI Landscape Guide</span>
               </h3>
