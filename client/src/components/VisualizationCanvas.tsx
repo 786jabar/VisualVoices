@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { useSimpleVisualization } from '@/hooks/useSimpleVisualization';
+import { useBasicVisualization } from '@/hooks/useBasicVisualization';
 import { cn, getSentimentEmoji, getSentimentDescription } from '@/lib/utils';
 import { Loader2, Sparkles } from 'lucide-react';
 
@@ -22,7 +22,7 @@ const VisualizationCanvas: FC<VisualizationCanvasProps> = ({
   colorIntensity,
   motion
 }) => {
-  const { canvasRef, saveCanvas } = useSimpleVisualization({
+  const { containerRef, saveCanvas } = useBasicVisualization({
     sentiment,
     sentimentScore,
     text,
@@ -51,7 +51,7 @@ const VisualizationCanvas: FC<VisualizationCanvasProps> = ({
     <section id="visualizationContainer" className="relative flex-1 bg-black overflow-hidden">
       {/* P5.js Canvas Container - ensure it takes full available space */}
       <div 
-        ref={canvasRef} 
+        ref={containerRef} 
         className="absolute inset-0 w-full h-full" 
         style={{ display: 'block', position: 'absolute', width: '100%', height: '100%' }}
       ></div>
