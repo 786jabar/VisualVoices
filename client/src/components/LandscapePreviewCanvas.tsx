@@ -89,32 +89,156 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
 
       // Initialize particles for atmospheric effects
       function initializeParticles() {
-        for (let i = 0; i < numParticles; i++) {
-          const pos = p.createVector(
-            p.random(-p.width/2, p.width/2),
-            p.random(-p.height/2, p.height/2),
-            p.random(-100, 100)
-          );
+        // Adjust number of particles based on visualization type
+        const particleCount = isGalactic || isCosmic ? numParticles * 1.5 : numParticles;
+        
+        for (let i = 0; i < particleCount; i++) {
+          let pos, vel, particleColor, particleType, particleSize, particleAlpha, orbitRadius, orbitSpeed;
           
-          const vel = p.createVector(
-            p.random(-1, 1) * 0.3,
-            p.random(-1, 1) * 0.3,
-            p.random(-0.5, 0.5) * 0.4
-          );
-          
-          let particleColor;
-          try {
-            particleColor = p.lerpColor(secondaryColor, accentColor, p.random());
-          } catch (err) {
-            particleColor = p.color(150, 150, 200);
+          // Create different types of particles based on landscape type
+          if (isGalactic) {
+            // For galactic landscapes, create spiral galaxy distribution
+            const angle = p.random(p.TWO_PI);
+            const distance = p.random(50, p.width/2 * 0.8);
+            const spiralOffset = p.random(0, 15) * (Math.random() > 0.5 ? 1 : -1);
+            
+            // Spiral galaxy coordinates
+            pos = p.createVector(
+              Math.cos(angle + spiralOffset/100 * distance) * distance,
+              Math.sin(angle + spiralOffset/100 * distance) * distance * 0.3, // Flatten the galaxy
+              p.random(-30, 30)
+            );
+            
+            // Orbital velocity for spiral galaxy
+            vel = p.createVector(
+              -pos.y * 0.01, // Orbital velocity
+              pos.x * 0.01,
+              0
+            );
+            
+            // Stars in the spiral galaxy have different colors based on position
+            try {
+              const starColorRandom = p.random();
+              if (starColorRandom > 0.97) {
+                // Red giant stars
+                particleColor = p.color(255, 100, 50);
+                particleSize = p.random(4, 8);
+                particleType = 'redgiant';
+              } else if (starColorRandom > 0.93) {
+                // Blue bright stars
+                particleColor = p.color(100, 150, 255);
+                particleSize = p.random(3, 6);
+                particleType = 'bluestar';
+              } else if (starColorRandom > 0.85) {
+                // Yellow stars like our sun
+                particleColor = p.color(255, 230, 150);
+                particleSize = p.random(2, 4);
+                particleType = 'yellowstar';
+              } else {
+                // Common white/dim stars
+                particleColor = p.lerpColor(
+                  p.color(200, 200, 255),
+                  p.color(255, 255, 255),
+                  p.random()
+                );
+                particleSize = p.random(1, 3);
+                particleType = 'whitestar';
+              }
+            } catch (err) {
+              particleColor = p.color(200, 200, 255);
+              particleSize = p.random(1, 3);
+              particleType = 'default';
+            }
+            
+            particleAlpha = p.random(150, 230);
+            
+          } else if (isCosmic) {
+            // For cosmic landscapes, create a nebula with dust and stars
+            pos = p.createVector(
+              p.random(-p.width/2, p.width/2),
+              p.random(-p.height/2, p.height/2),
+              p.random(-80, 80)
+            );
+            
+            vel = p.createVector(
+              p.random(-0.5, 0.5) * 0.2,
+              p.random(-0.5, 0.5) * 0.2,
+              p.random(-0.1, 0.1) * 0.1
+            );
+            
+            // Colors for nebula particles
+            try {
+              const nebulaType = p.random();
+              if (nebulaType > 0.7) {
+                // Purple/blue nebula dust
+                particleColor = p.lerpColor(
+                  p.color(80, 50, 120), 
+                  p.color(50, 70, 180),
+                  p.random()
+                );
+                particleType = 'nebuladust';
+                particleSize = p.random(5, 12);
+                particleAlpha = p.random(30, 100); // More transparent
+              } else if (nebulaType > 0.4) {
+                // Red/orange nebula dust
+                particleColor = p.lerpColor(
+                  p.color(180, 60, 30), 
+                  p.color(220, 100, 40),
+                  p.random()
+                );
+                particleType = 'nebuladust';
+                particleSize = p.random(4, 10);
+                particleAlpha = p.random(30, 100); // More transparent
+              } else {
+                // Stars within the nebula
+                particleColor = p.color(255, 255, 255);
+                particleType = 'star';
+                particleSize = p.random(1, 3);
+                particleAlpha = p.random(150, 250); // Brighter
+              }
+            } catch (err) {
+              particleColor = p.color(150, 150, 200);
+              particleType = 'default';
+              particleSize = p.random(2, 6);
+              particleAlpha = p.random(100, 200);
+            }
+          } else {
+            // Regular landscape particles
+            pos = p.createVector(
+              p.random(-p.width/2, p.width/2),
+              p.random(-p.height/2, p.height/2),
+              p.random(-100, 100)
+            );
+            
+            vel = p.createVector(
+              p.random(-1, 1) * 0.3,
+              p.random(-1, 1) * 0.3,
+              p.random(-0.5, 0.5) * 0.4
+            );
+            
+            try {
+              particleColor = p.lerpColor(secondaryColor, accentColor, p.random());
+            } catch (err) {
+              particleColor = p.color(150, 150, 200);
+            }
+            
+            particleSize = p.random(2, 6);
+            particleAlpha = p.random(100, 200);
+            particleType = 'regular';
           }
           
+          // Add the particle with all properties
           particles.push({
             pos: pos,
             vel: vel,
-            size: p.random(2, 6),
+            size: particleSize || p.random(2, 6),
             color: particleColor,
-            alpha: p.random(100, 200)
+            alpha: particleAlpha || p.random(100, 200),
+            type: particleType || 'regular',
+            // Additional properties for special particles
+            orbitAngle: p.random(p.TWO_PI), // Starting angle for orbital motion
+            pulseFactor: p.random(0.01, 0.05), // For pulsating stars
+            pulseSpeed: p.random(0.02, 0.06) // Speed of pulsation
           });
         }
       }
@@ -295,6 +419,14 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           } else if (soundscapeType === 'mysterious') {
             skyColorTop.setAlpha(150);
             skyColorBottom.setAlpha(200);
+          } else if (soundscapeType === 'galactic') {
+            // Deep space black with hints of blue
+            skyColorTop = p.color(5, 10, 30, 255);
+            skyColorBottom = p.color(0, 0, 10, 255);
+          } else if (soundscapeType === 'cosmic') {
+            // Nebula-like background
+            skyColorTop = p.color(40, 0, 60, 220);  // Deep purple
+            skyColorBottom = p.color(5, 0, 20, 255); // Almost black
           } else {
             skyColorTop.setAlpha(200);
             skyColorBottom.setAlpha(240);
@@ -347,6 +479,15 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
             p.stroke(accentColor);
             p.fill(secondaryColor);
             p.strokeWeight(0.7);
+          } else if (soundscapeType === 'galactic' || soundscapeType === 'cosmic') {
+            // For galaxy landscapes, don't render terrain normally
+            // We'll handle special rendering in updateParticles
+            p.noStroke();
+            p.noFill();
+            
+            // Skip terrain rendering for galaxy and return early
+            p.pop();
+            return;
           } else { // melancholic
             p.stroke(50);
             p.fill(primaryColor);
