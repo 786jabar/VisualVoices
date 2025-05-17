@@ -16,6 +16,7 @@ import DashboardLandscapes from '@/components/DashboardLandscapes';
 import CreativitySparkButton from '@/components/CreativitySparkButton';
 import TransformationToast from '@/components/TransformationToast';
 import CollaborativeVisualizer from '@/components/CollaborativeVisualizer';
+import VisualizationThemeToggle, { VisualizationTheme } from '@/components/VisualizationThemeToggle';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { use3DAudio } from '@/hooks/use3DAudio';
@@ -65,6 +66,9 @@ export default function Home() {
     secondary: '#192a56',
     accent: '#4bcffa'
   });
+  
+  // State for visualization themes
+  const [currentThemeId, setCurrentThemeId] = useState<string>('cosmic-blue');
   const [originalState, setOriginalState] = useState<{
     sentiment: number;
     colors: { primary: string; secondary: string; accent: string; };
