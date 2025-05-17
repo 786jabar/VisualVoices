@@ -211,30 +211,58 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}): Speech
     
     const langCode = language.split('-')[0].toLowerCase();
     
-    // Try to find a female voice in the specified language
-    const femaleVoice = voices.find(
+    // List of common female voice names across different platforms
+    const femaleVoiceIdentifiers = [
+      'female', 'woman', 'girl', 'samantha', 'lisa', 'karen', 'tessa', 'monica', 'victoria',
+      'alice', 'alva', 'amelie', 'anna', 'carmit', 'damayanti', 'ellen', 'fiona', 'ioana',
+      'joana', 'kanya', 'kyoko', 'laura', 'lekha', 'luca', 'luciana', 'maged', 'mariska', 
+      'meijia', 'melina', 'milena', 'moira', 'monica', 'nora', 'paulina', 'samantha', 'sara', 
+      'satu', 'sin-ji', 'tessa', 'thomas', 'ting-ting', 'veena', 'yuna', 'yuri', 'zosia',
+      'zuzana', 'f '
+    ];
+    
+    // Try to find a premium/enhanced female voice for natural sounding output first
+    const premiumFemaleVoice = voices.find(
       voice => voice.lang.toLowerCase().startsWith(langCode) && 
-              (voice.name.toLowerCase().includes('female') || 
-               voice.name.toLowerCase().includes('woman') ||
-               voice.name.toLowerCase().includes('girl') ||
-               (voice.name.toLowerCase().includes('google') && !voice.name.toLowerCase().includes('male')) ||
-               voice.name.toLowerCase().includes('samantha') ||
-               voice.name.toLowerCase().includes('lisa') ||
-               voice.name.toLowerCase().includes('karen') ||
-               voice.name.toLowerCase().includes('tessa') ||
-               voice.name.toLowerCase().includes('monica') ||
-               voice.name.toLowerCase().includes('f '))
+              (femaleVoiceIdentifiers.some(id => voice.name.toLowerCase().includes(id)) &&
+               (voice.name.toLowerCase().includes('premium') || 
+                voice.name.toLowerCase().includes('enhanced') ||
+                voice.name.toLowerCase().includes('natural')))
     );
     
-    // Try any voice in the language
+    // Try to find a regular female voice in the specified language
+    const femaleVoice = voices.find(
+      voice => voice.lang.toLowerCase().startsWith(langCode) && 
+              femaleVoiceIdentifiers.some(id => voice.name.toLowerCase().includes(id))
+    );
+    
+    // Try non-male Google voices (which are typically female)
+    const googleFemaleVoice = voices.find(
+      voice => voice.lang.toLowerCase().startsWith(langCode) && 
+              voice.name.toLowerCase().includes('google') && 
+              !voice.name.toLowerCase().includes('male')
+    );
+    
+    // Try any voice in the language as last resort
     const anyVoice = voices.find(
       voice => voice.lang.toLowerCase().startsWith(langCode)
     );
     
-    // Fallback to current voice or English voice if available
-    return femaleVoice || anyVoice || currentVoice || 
-           voices.find(v => v.lang.toLowerCase().startsWith('en')) || 
-           voices[0];
+    // For English fallback, try to find a female voice
+    const femaleEnglishVoice = voices.find(
+      voice => voice.lang.toLowerCase().startsWith('en') &&
+              femaleVoiceIdentifiers.some(id => voice.name.toLowerCase().includes(id))
+    );
+    
+    // Any English voice as last resort
+    const englishVoice = voices.find(v => v.lang.toLowerCase().startsWith('en'));
+    
+    console.log("Looking for voice in language:", language);
+    
+    // Prioritize finding a female voice
+    return premiumFemaleVoice || femaleVoice || googleFemaleVoice || 
+           anyVoice || femaleEnglishVoice || englishVoice || 
+           currentVoice || voices[0];
   }, [voices, currentVoice]);
 
   // Set the language and find an appropriate voice
