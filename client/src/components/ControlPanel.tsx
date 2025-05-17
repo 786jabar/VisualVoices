@@ -576,6 +576,27 @@ const ControlPanel: FC<ControlPanelProps> = ({
       {/* Action Buttons */}
       <div className="p-3 sm:p-4 border-t border-gray-800 bg-gray-900/70">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Collaboration Button */}
+          {onCollaborationToggle && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    className="flex items-center justify-center bg-blue-700 hover:bg-blue-600 text-white"
+                    onClick={onCollaborationToggle}
+                    disabled={!canSaveToGallery}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline text-xs">Collaborate</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Share this visualization in real-time</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
           {/* Theme Toggle Button */}
           {onThemeChange && (
             <TooltipProvider>
