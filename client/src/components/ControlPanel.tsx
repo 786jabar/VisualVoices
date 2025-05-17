@@ -600,10 +600,10 @@ const ControlPanel: FC<ControlPanelProps> = ({
           <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
             <DialogTrigger asChild>
               <Button
-                className="bg-indigo-700 hover:bg-indigo-600 text-white col-span-2 py-2 flex items-center justify-center"
+                className="bg-indigo-700 hover:bg-indigo-600 text-white col-span-2 py-2 flex items-center justify-center text-xs sm:text-sm"
                 disabled={!canSaveToGallery}
               >
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span>Save to Gallery</span>
               </Button>
             </DialogTrigger>
@@ -684,11 +684,11 @@ const ControlPanel: FC<ControlPanelProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  className="bg-indigo-700 hover:bg-indigo-600 text-white"
+                  className="bg-indigo-700 hover:bg-indigo-600 text-white h-auto p-2 sm:p-3"
                   onClick={onSaveImage}
                   disabled={!transcription}
                 >
-                  <Download className="h-4 w-4" />
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -702,12 +702,12 @@ const ControlPanel: FC<ControlPanelProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  className="bg-indigo-700 hover:bg-indigo-600 text-white"
+                  className="bg-indigo-700 hover:bg-indigo-600 text-white h-auto p-2 sm:p-3"
                   onClick={handleShare}
                   aria-label="Share"
                   disabled={!transcription}
                 >
-                  <Share2 className="h-4 w-4" />
+                  <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

@@ -155,12 +155,12 @@ const VisualizationThemeToggle: React.FC<VisualizationThemeToggleProps> = ({
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="outline" 
-                className={`flex items-center gap-2 ${className}`}
+                className={`flex items-center gap-1 sm:gap-2 p-1 sm:p-2 h-auto ${className}`}
                 aria-label="Change visualization theme"
               >
-                <Palette className="h-4 w-4" />
-                <span className="hidden sm:inline-block">{getCurrentThemeName()}</span>
-                <ChevronDown className="h-3 w-3 opacity-50" />
+                <Palette className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline-block text-xs sm:text-sm">{getCurrentThemeName()}</span>
+                <ChevronDown className="h-2 w-2 sm:h-3 sm:w-3 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
