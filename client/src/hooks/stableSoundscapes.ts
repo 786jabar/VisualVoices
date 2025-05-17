@@ -50,12 +50,32 @@ export function useStableSoundscapes(options: SoundscapeOptions): MultipleSounds
   // Track if soundscape change is in progress
   const changingRef = useRef(false);
   
+  // Debounce state to prevent rapid audio changes
+  const debounceTimerRef = useRef<number | null>(null);
+  
+  // Track audio context state
+  const contextStateRef = useRef<string>('suspended');
+  
   // Clean up resources on unmount
   useEffect(() => {
     isMountedRef.current = true;
     
+    // Track context state changes
+    contextStateRef.current = Tone.context.state;
+    console.log("Tone.js context initial state:", Tone.context.state);
+    
     return () => {
+      console.log("Soundscape component unmounting, cleaning up resources");
       isMountedRef.current = false;
+      
+      // Clear any pending debounce timers
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      
+      // Remove state change listener
+      Tone.context.onstatechange = null;
       
       // Clean up all audio resources
       const disposeLoop = (loop: Tone.Loop | null) => {
@@ -450,30 +470,70 @@ export function useStableSoundscapes(options: SoundscapeOptions): MultipleSounds
     }
   }, [isInitialized]);
   
-  // Toggle play/pause
+  // Toggle play/pause with improved stability
   const togglePlay = useCallback(async () => {
     if (!isInitialized || !isMountedRef.current) return;
+    
+    // Prevent multiple rapid toggles
+    if (debounceTimerRef.current !== null) {
+      return;
+    }
     
     try {
       // First time playing - need to initialize audio context
       if (!isPlaying) {
-        // Start transport
-        if (Tone.Transport.state !== 'started') {
-          Tone.Transport.start("+0.1");
+        console.log("Starting audio playback...");
+        
+        // Ensure audio context is running
+        if (Tone.context.state !== 'running') {
+          await Tone.context.resume();
+          console.log("Tone context resumed:", Tone.context.state);
         }
         
-        if (isMountedRef.current) {
-          setIsPlaying(true);
-        }
+        // Add a small delay to ensure context is fully resumed
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Start transport with a delay to prevent glitches
+        debounceTimerRef.current = window.setTimeout(() => {
+          if (!isMountedRef.current) return;
+          
+          try {
+            if (Tone.Transport.state !== 'started') {
+              Tone.Transport.start("+0.1");
+              console.log("Transport started");
+            }
+            
+            if (isMountedRef.current) {
+              setIsPlaying(true);
+            }
+          } catch (error) {
+            console.error("Error starting transport:", error);
+          } finally {
+            debounceTimerRef.current = null;
+          }
+        }, 200);
       } else {
-        // Already playing - pause
-        if (Tone.Transport.state === 'started') {
-          Tone.Transport.stop();
-        }
+        console.log("Stopping audio playback...");
         
-        if (isMountedRef.current) {
-          setIsPlaying(false);
-        }
+        // Already playing - pause with debounce
+        debounceTimerRef.current = window.setTimeout(() => {
+          if (!isMountedRef.current) return;
+          
+          try {
+            if (Tone.Transport.state === 'started') {
+              Tone.Transport.stop();
+              console.log("Transport stopped");
+            }
+            
+            if (isMountedRef.current) {
+              setIsPlaying(false);
+            }
+          } catch (error) {
+            console.error("Error stopping transport:", error);
+          } finally {
+            debounceTimerRef.current = null;
+          }
+        }, 200);
       }
     } catch (error) {
       console.error('Error toggling playback:', error);
