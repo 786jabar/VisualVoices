@@ -284,20 +284,20 @@ const ControlPanel: FC<ControlPanelProps> = ({
   return (
     <section className="bg-gray-900/90 backdrop-blur-sm border-l border-gray-800 w-full md:w-96 flex flex-col overflow-hidden">
       {/* Speech Input Controls */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-6 border-b border-gray-800">
         <h2 className="text-2xl font-semibold mb-3 text-white flex items-center">
           <span className="mr-2">Vocal Earth</span>
-          {sentiment && <span>{getSentimentEmoji(sentiment)}</span>}
+          {sentiment && <span className="text-3xl">{getSentimentEmoji(sentiment)}</span>}
         </h2>
-        <p className="text-sm text-gray-400 mb-4">
+        <p className="text-sm text-gray-300 mb-4 leading-relaxed">
           {transcription ? getSentimentDescription(sentiment) : 'Your voice will create a living, surreal landscape that evolves as you speak.'}
         </p>
         
         {/* Speech Controls */}
         <div className="flex flex-col space-y-4">
-          <div id="speechStatus" className="rounded-lg bg-gray-800/70 p-3 flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${statusInfo.color} ${statusInfo.animation}`}></div>
-            <span className="text-sm text-gray-300">{statusInfo.text}</span>
+          <div id="speechStatus" className="rounded-lg bg-gray-800/80 p-4 flex items-center space-x-3 border border-gray-700/30 shadow-inner">
+            <div className={`w-4 h-4 rounded-full ${statusInfo.color} ${statusInfo.animation}`}></div>
+            <span className="text-sm font-medium text-gray-200">{statusInfo.text}</span>
           </div>
           
           <div className="flex space-x-2">
@@ -306,22 +306,22 @@ const ControlPanel: FC<ControlPanelProps> = ({
                 <TooltipTrigger asChild>
                   <Button
                     className={cn(
-                      "flex-1 py-3 px-4 flex items-center justify-center space-x-2",
+                      "flex-1 py-4 px-5 flex items-center justify-center space-x-2 shadow-lg transition-all duration-300",
                       isListening 
-                        ? "bg-rose-700 hover:bg-rose-600 text-white" 
-                        : "bg-emerald-700 hover:bg-emerald-600 text-white"
+                        ? "bg-rose-700 hover:bg-rose-600 text-white border border-rose-500" 
+                        : "bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500"
                     )}
                     onClick={isListening ? onStopSpeaking : onStartSpeaking}
                   >
                     {isListening ? (
                       <>
-                        <StopCircle className="h-4 w-4 mr-2" />
-                        <span>End Recording</span>
+                        <StopCircle className="h-5 w-5 mr-2" />
+                        <span className="font-medium">End Recording</span>
                       </>
                     ) : (
                       <>
-                        <Mic className="h-4 w-4 mr-2" />
-                        <span>Start Speaking</span>
+                        <Mic className="h-5 w-5 mr-2" />
+                        <span className="font-medium">Start Speaking</span>
                       </>
                     )}
                   </Button>
@@ -336,14 +336,15 @@ const ControlPanel: FC<ControlPanelProps> = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="bg-indigo-700 hover:bg-indigo-600 text-white"
+                    className="bg-indigo-700 hover:bg-indigo-600 text-white border border-indigo-500 shadow-md"
                     onClick={onToggleAudio}
                     aria-label={isAudioEnabled ? "Mute audio" : "Enable audio"}
+                    size="lg"
                   >
                     {isAudioEnabled ? (
-                      <Volume2 className="h-4 w-4" />
+                      <Volume2 className="h-5 w-5" />
                     ) : (
-                      <VolumeX className="h-4 w-4" />
+                      <VolumeX className="h-5 w-5" />
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -358,10 +359,11 @@ const ControlPanel: FC<ControlPanelProps> = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      className="bg-purple-700 hover:bg-purple-600 text-white"
+                      className="bg-purple-700 hover:bg-purple-600 text-white border border-purple-500 shadow-md"
                       onClick={onCollaborationToggle}
+                      size="lg"
                     >
-                      <Users className="h-4 w-4" />
+                      <Users className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
