@@ -1,14 +1,44 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// Add supported languages for the app
+export type SupportedLanguage = 
+  'en-US' | 'en-GB' | 'es-ES' | 'fr-FR' | 'de-DE' | 'it-IT' | 
+  'ja-JP' | 'ko-KR' | 'zh-CN' | 'zh-TW' | 'ru-RU' | 'pt-BR' | 
+  'ar-SA' | 'hi-IN' | 'nl-NL' | 'pl-PL' | 'sv-SE' | 'tr-TR';
+
+// Language metadata for better display and selection
+export const SUPPORTED_LANGUAGES: Record<SupportedLanguage, {name: string, nativeName: string}> = {
+  'en-US': { name: 'English (US)', nativeName: 'English (US)' },
+  'en-GB': { name: 'English (UK)', nativeName: 'English (UK)' },
+  'es-ES': { name: 'Spanish', nativeName: 'Español' },
+  'fr-FR': { name: 'French', nativeName: 'Français' },
+  'de-DE': { name: 'German', nativeName: 'Deutsch' },
+  'it-IT': { name: 'Italian', nativeName: 'Italiano' },
+  'ja-JP': { name: 'Japanese', nativeName: '日本語' },
+  'ko-KR': { name: 'Korean', nativeName: '한국어' },
+  'zh-CN': { name: 'Chinese (Simplified)', nativeName: '中文 (简体)' },
+  'zh-TW': { name: 'Chinese (Traditional)', nativeName: '中文 (繁體)' },
+  'ru-RU': { name: 'Russian', nativeName: 'Русский' },
+  'pt-BR': { name: 'Portuguese (Brazil)', nativeName: 'Português (Brasil)' },
+  'ar-SA': { name: 'Arabic', nativeName: 'العربية' },
+  'hi-IN': { name: 'Hindi', nativeName: 'हिन्दी' },
+  'nl-NL': { name: 'Dutch', nativeName: 'Nederlands' },
+  'pl-PL': { name: 'Polish', nativeName: 'Polski' },
+  'sv-SE': { name: 'Swedish', nativeName: 'Svenska' },
+  'tr-TR': { name: 'Turkish', nativeName: 'Türkçe' }
+};
+
 interface SpeechSynthesisOptions {
   voice?: SpeechSynthesisVoice | null;
   rate?: number;
   pitch?: number;
   volume?: number;
+  language?: SupportedLanguage;
 }
 
 interface SpeechSynthesisHook {
   speak: (text: string) => void;
+  speakInLanguage: (text: string, language: SupportedLanguage) => void;
   stop: () => void;
   pause: () => void;
   resume: () => void;
@@ -16,6 +46,9 @@ interface SpeechSynthesisHook {
   isPaused: boolean;
   isSupported: boolean;
   voices: SpeechSynthesisVoice[];
+  availableLanguages: SupportedLanguage[];
+  currentLanguage: SupportedLanguage;
+  setLanguage: (language: SupportedLanguage) => void;
   setVoice: (voice: SpeechSynthesisVoice) => void;
   setRate: (rate: number) => void;
   setPitch: (pitch: number) => void;
@@ -29,9 +62,14 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}): Speech
   // Check if the browser supports speech synthesis
   const isSupported = 'speechSynthesis' in window;
   
+  // Get default language from localStorage or use en-US as fallback
+  const defaultLanguage = (localStorage.getItem('preferredLanguage') as SupportedLanguage) || 'en-US';
+  
   // State for speech properties
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(options.voice || null);
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(options.language || defaultLanguage);
+  const [availableLanguages, setAvailableLanguages] = useState<SupportedLanguage[]>([]);
   const [rate, setRate] = useState(options.rate || 1);
   const [pitch, setPitch] = useState(options.pitch || 1);
   const [volume, setVolume] = useState(options.volume || 1);

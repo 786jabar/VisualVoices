@@ -380,18 +380,55 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
     }
   }, [options.volume, volume, setVolume]);
   
-  // Update playing state when isActive changes
+  // Update playing state when isActive changes with improved reliability
   useEffect(() => {
     if (isInitialized) {
-      if (options.isActive && !isPlaying) {
-        Tone.Transport.start();
-        setIsPlaying(true);
-      } else if (!options.isActive && isPlaying) {
-        Tone.Transport.pause();
-        setIsPlaying(false);
-      }
+      const handleStateChange = async () => {
+        try {
+          // When the component becomes active
+          if (options.isActive && !isPlaying) {
+            // Make sure audio context is running
+            await Tone.start();
+            
+            // Ensure clean transport state
+            if (Tone.Transport.state === 'started') {
+              Tone.Transport.stop();
+              // Small delay to ensure clean restart
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            // Start loops explicitly to ensure they're running
+            if (mainLoop && mainLoop.state !== 'started') {
+              mainLoop.start(0);
+            }
+            
+            if (ambienceLoop && ambienceLoop.state !== 'started') {
+              ambienceLoop.start(0);
+            }
+            
+            // Start transport
+            Tone.Transport.start("+0.1");
+            setIsPlaying(true);
+          } 
+          // When the component becomes inactive
+          else if (!options.isActive && isPlaying) {
+            // Release any held notes
+            if (synth) {
+              synth.releaseAll();
+            }
+            
+            // Stop transport
+            Tone.Transport.pause();
+            setIsPlaying(false);
+          }
+        } catch (error) {
+          console.error("Error handling active state change:", error);
+        }
+      };
+      
+      handleStateChange();
     }
-  }, [options.isActive, isInitialized, isPlaying]);
+  }, [options.isActive, isInitialized, isPlaying, synth, mainLoop, ambienceLoop]);
   
   return {
     isPlaying,
