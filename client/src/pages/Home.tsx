@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { downloadCanvasAsImage } from '@/lib/utils';
 import { generatePoeticSummary } from '@/lib/queryClient';
 import Header from '@/components/Header';
-import VisualizationCanvas from '@/components/VisualizationCanvas';
+import AdvancedVisualizationCanvas from '@/components/AdvancedVisualizationCanvas';
 import ControlPanel from '@/components/ControlPanel';
 import HelpModal from '@/components/HelpModal';
 import SettingsModal from '@/components/SettingsModal';
@@ -15,7 +15,7 @@ import CreativitySparkButton from '@/components/CreativitySparkButton';
 import TransformationToast from '@/components/TransformationToast';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
-import { useToneAudio } from '@/hooks/useToneAudio';
+import { useStableToneAudio } from '@/hooks/useStableToneAudio';
 import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { SupportedLanguage } from '@/hooks/useSpeechSynthesis';
 import { 
@@ -396,13 +396,14 @@ export default function Home() {
           <div className="lg:w-2/3 relative flex flex-col h-full">
             {/* Active Visualization Canvas - shows when speaking/processing */}
             <div className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${isListening || transcript ? 'opacity-100' : 'opacity-0'}`}>
-              <VisualizationCanvas 
+              <AdvancedVisualizationCanvas 
                 sentiment={sentiment}
                 sentimentScore={sentimentScore}
                 text={transcript}
                 isProcessing={summaryMutation.isPending}
                 colorIntensity={settings.colorIntensity}
                 motion={settings.motionEffects}
+                onClearSummary={handleClearSummary}
               />
             </div>
             
