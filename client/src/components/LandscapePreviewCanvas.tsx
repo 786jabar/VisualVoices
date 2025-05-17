@@ -365,21 +365,93 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           // Performance optimization: Only update terrain periodically
           const shouldUpdateTerrain = p.frameCount % 3 === 0;
           
-          // Draw 3D terrain
-          drawTerrain();
-          
-          // Update particles less frequently to improve performance
-          if (p.frameCount % 2 === 0) {
+          // Special rendering for galaxy landscapes
+          if (isGalactic || isCosmic) {
+            // For galaxy landscapes, we'll render differently
+            // Slowly rotate the entire view to simulate galaxy rotation
+            p.push();
+            p.rotateZ(p.frameCount * 0.0005);
+            
+            // Add a subtle camera movement for cosmic effect
+            const cameraMovement = p.sin(p.frameCount * 0.01) * 5;
+            p.translate(0, cameraMovement, 0);
+            
+            // Draw 3D terrain (this function will exit early for galaxy types)
+            drawTerrain();
+            
+            // Update particles every frame for smoother galaxy movement
             updateParticles();
-          }
-          
-          // Move through terrain if in flow mode, but at reduced rate
-          if (isFlowing && shouldUpdateTerrain) {
-            flying -= 0.008; // Reduced from 0.015 for smoother animation
-            try {
-              refreshTerrain();
-            } catch (err) {
-              console.error('Error refreshing terrain:', err);
+            
+            // Draw a central glow for galactic core
+            if (isGalactic) {
+              p.push();
+              p.noStroke();
+              // Glowing core with pulsating size
+              const coreSize = 50 + p.sin(p.frameCount * 0.02) * 10;
+              const coreGlow = 120 + p.sin(p.frameCount * 0.03) * 30;
+              
+              // Outer glow
+              p.fill(255, 255, 220, 30);
+              p.ellipse(0, 0, coreGlow);
+              
+              // Inner core
+              p.fill(255, 240, 200, 70);
+              p.ellipse(0, 0, coreSize);
+              p.pop();
+            }
+            // For cosmic nebula, add dust cloud effects
+            else if (isCosmic) {
+              p.push();
+              p.noStroke();
+              
+              // Create nebula dust clouds
+              for (let i = 0; i < 3; i++) {
+                const angle = p.TWO_PI * i / 3 + p.frameCount * 0.001;
+                const distance = 100 + p.sin(p.frameCount * 0.01 + i) * 20;
+                const x = p.cos(angle) * distance;
+                const y = p.sin(angle) * distance;
+                
+                const dustSize = 80 + p.sin(p.frameCount * 0.02 + i * 0.5) * 20;
+                
+                // Use colors from the theme
+                const nebulaBrightness = 0.6 + p.sin(p.frameCount * 0.02 + i) * 0.2;
+                p.fill(p.red(accentColor), p.green(accentColor), p.blue(accentColor), 40 * nebulaBrightness);
+                
+                p.push();
+                p.translate(x, y);
+                p.beginShape();
+                // Create irregular cloud shape
+                for (let j = 0; j < 10; j++) {
+                  const a = j * p.TWO_PI / 10;
+                  const r = dustSize * (0.7 + p.noise(i, j, p.frameCount * 0.01) * 0.5);
+                  p.vertex(p.cos(a) * r, p.sin(a) * r);
+                }
+                p.endShape(p.CLOSE);
+                p.pop();
+              }
+              p.pop();
+            }
+            
+            p.pop(); // End galaxy rotation transform
+          } 
+          else {
+            // Regular landscape rendering for non-galaxy types
+            // Draw 3D terrain
+            drawTerrain();
+            
+            // Update particles less frequently to improve performance
+            if (p.frameCount % 2 === 0) {
+              updateParticles();
+            }
+            
+            // Move through terrain if in flow mode, but at reduced rate
+            if (isFlowing && shouldUpdateTerrain) {
+              flying -= 0.008; // Reduced from 0.015 for smoother animation
+              try {
+                refreshTerrain();
+              } catch (err) {
+                console.error('Error refreshing terrain:', err);
+              }
             }
           }
         } catch (drawError) {
