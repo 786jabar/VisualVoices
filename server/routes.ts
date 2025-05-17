@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
 import axios from "axios";
 import { z } from "zod";
@@ -429,5 +430,274 @@ This narration will be read aloud by a text-to-speech system, so ensure it flows
   });
 
   const httpServer = createServer(app);
+  
+  // Create WebSocket server for real-time collaboration
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Track connected clients and their rooms
+  const connectedClients = new Map<WebSocket, {
+    id: string;
+    room: string;
+    username: string;
+  }>();
+  
+  // Track collaboration rooms
+  const collaborationRooms = new Map<string, {
+    clients: WebSocket[];
+    visualizationData: any;
+    owner: string;
+  }>();
+  
+  // Handle WebSocket connections
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('New WebSocket connection established');
+    
+    // Handle messages from clients
+    ws.on('message', (message: string) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Handle different message types
+        switch (data.type) {
+          case 'join':
+            handleJoinRoom(ws, data);
+            break;
+          case 'create':
+            handleCreateRoom(ws, data);
+            break;
+          case 'leave':
+            handleLeaveRoom(ws, data);
+            break;
+          case 'update':
+            handleVisualizationUpdate(ws, data);
+            break;
+          case 'chat':
+            handleChatMessage(ws, data);
+            break;
+          default:
+            console.warn('Unknown message type:', data.type);
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+        sendToClient(ws, {
+          type: 'error',
+          message: 'Invalid message format'
+        });
+      }
+    });
+    
+    // Handle client disconnection
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+      handleClientDisconnect(ws);
+    });
+    
+    // Send initial connection acknowledgment
+    sendToClient(ws, {
+      type: 'connected',
+      message: 'Connected to Vocal Earth collaborative visualization server'
+    });
+  });
+  
+  // Helper function to send message to a specific client
+  function sendToClient(client: WebSocket, data: any) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  }
+  
+  // Helper function to broadcast to all clients in a room
+  function broadcastToRoom(roomId: string, data: any, excludeClient?: WebSocket) {
+    const room = collaborationRooms.get(roomId);
+    if (!room) return;
+    
+    room.clients.forEach(client => {
+      if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(data));
+      }
+    });
+  }
+  
+  // Handle client joining a room
+  function handleJoinRoom(ws: WebSocket, data: any) {
+    const { roomId, username, clientId } = data;
+    
+    // Check if room exists
+    const room = collaborationRooms.get(roomId);
+    if (!room) {
+      return sendToClient(ws, {
+        type: 'error',
+        message: 'Room does not exist'
+      });
+    }
+    
+    // Add client to room
+    room.clients.push(ws);
+    
+    // Track client details
+    connectedClients.set(ws, {
+      id: clientId,
+      room: roomId,
+      username: username || 'Anonymous'
+    });
+    
+    // Notify other clients in the room
+    broadcastToRoom(roomId, {
+      type: 'user-joined',
+      username: username || 'Anonymous',
+      clientId: clientId,
+      timestamp: new Date().toISOString()
+    }, ws);
+    
+    // Send current visualization data to the new client
+    sendToClient(ws, {
+      type: 'visualization-data',
+      data: room.visualizationData,
+      users: room.clients.map(client => {
+        const clientInfo = connectedClients.get(client);
+        return {
+          id: clientInfo?.id,
+          username: clientInfo?.username
+        };
+      }).filter(Boolean),
+      owner: room.owner
+    });
+    
+    console.log(`Client ${clientId} (${username}) joined room ${roomId}`);
+  }
+  
+  // Handle client creating a new room
+  function handleCreateRoom(ws: WebSocket, data: any) {
+    const { visualizationData, username, clientId } = data;
+    
+    // Generate a unique room ID
+    const roomId = Math.random().toString(36).substring(2, 10);
+    
+    // Create the room
+    collaborationRooms.set(roomId, {
+      clients: [ws],
+      visualizationData,
+      owner: clientId
+    });
+    
+    // Track client details
+    connectedClients.set(ws, {
+      id: clientId,
+      room: roomId,
+      username: username || 'Anonymous'
+    });
+    
+    // Notify client that room was created
+    sendToClient(ws, {
+      type: 'room-created',
+      roomId,
+      owner: clientId
+    });
+    
+    console.log(`Client ${clientId} (${username}) created room ${roomId}`);
+  }
+  
+  // Handle client leaving a room
+  function handleLeaveRoom(ws: WebSocket, data: any) {
+    const clientInfo = connectedClients.get(ws);
+    if (!clientInfo) return;
+    
+    const { room: roomId } = clientInfo;
+    
+    // Get the room
+    const room = collaborationRooms.get(roomId);
+    if (!room) return;
+    
+    // Remove client from room
+    room.clients = room.clients.filter(client => client !== ws);
+    
+    // Notify other clients in the room
+    broadcastToRoom(roomId, {
+      type: 'user-left',
+      username: clientInfo.username,
+      clientId: clientInfo.id,
+      timestamp: new Date().toISOString()
+    });
+    
+    // If room is empty, delete it
+    if (room.clients.length === 0) {
+      collaborationRooms.delete(roomId);
+      console.log(`Room ${roomId} deleted (no clients)`);
+    }
+    // If owner left, assign new owner
+    else if (room.owner === clientInfo.id) {
+      const newOwner = connectedClients.get(room.clients[0]);
+      if (newOwner) {
+        room.owner = newOwner.id;
+        broadcastToRoom(roomId, {
+          type: 'new-owner',
+          owner: newOwner.id,
+          username: newOwner.username
+        });
+      }
+    }
+    
+    // Remove client tracking
+    connectedClients.delete(ws);
+    
+    console.log(`Client ${clientInfo.id} (${clientInfo.username}) left room ${roomId}`);
+  }
+  
+  // Handle visualization updates from clients
+  function handleVisualizationUpdate(ws: WebSocket, data: any) {
+    const clientInfo = connectedClients.get(ws);
+    if (!clientInfo) return;
+    
+    const { room: roomId } = clientInfo;
+    const { visualizationData } = data;
+    
+    // Get the room
+    const room = collaborationRooms.get(roomId);
+    if (!room) return;
+    
+    // Update the visualization data
+    room.visualizationData = visualizationData;
+    
+    // Broadcast the update to all clients in the room
+    broadcastToRoom(roomId, {
+      type: 'visualization-update',
+      data: visualizationData,
+      sender: {
+        id: clientInfo.id,
+        username: clientInfo.username
+      },
+      timestamp: new Date().toISOString()
+    }, ws);
+  }
+  
+  // Handle chat messages between clients
+  function handleChatMessage(ws: WebSocket, data: any) {
+    const clientInfo = connectedClients.get(ws);
+    if (!clientInfo) return;
+    
+    const { room: roomId } = clientInfo;
+    const { message } = data;
+    
+    // Broadcast the message to all clients in the room
+    broadcastToRoom(roomId, {
+      type: 'chat',
+      message,
+      sender: {
+        id: clientInfo.id,
+        username: clientInfo.username
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // Handle client disconnection
+  function handleClientDisconnect(ws: WebSocket) {
+    const clientInfo = connectedClients.get(ws);
+    if (!clientInfo) return;
+    
+    // Handle as if client left the room
+    handleLeaveRoom(ws, {});
+  }
+  
   return httpServer;
 }
