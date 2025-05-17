@@ -1,55 +1,92 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Sparkles, Zap, Wand2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { applyRandomTransformation, type CreativeTransformation } from '@/lib/creativityTransformations';
 
 interface CreativitySparkButtonProps {
-  onSpark: () => void;
+  onSpark: (transformation: CreativeTransformation) => void;
   className?: string;
   disabled?: boolean;
 }
 
+/**
+ * A whimsical button that generates unexpected, inspiring visual transformations
+ */
 const CreativitySparkButton: React.FC<CreativitySparkButtonProps> = ({
   onSpark,
   className = '',
   disabled = false
 }) => {
-  const [isSpinning, setIsSpinning] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   
-  const handleClick = () => {
-    setIsSpinning(true);
+  // Handle click with debounce to prevent rapid clicks
+  const handleClick = async () => {
+    if (disabled || isAnimating) return;
     
-    // Trigger the spark effect
-    onSpark();
+    setIsAnimating(true);
     
-    // Reset the spinning animation after 1.5 seconds
-    setTimeout(() => {
-      setIsSpinning(false);
-    }, 1500);
+    try {
+      // Find the visualization canvas in the DOM
+      const canvasContainer = document.querySelector('#visualizationContainer');
+      const canvas = canvasContainer?.querySelector('canvas');
+      
+      // Apply a random transformation
+      const transformation = await applyRandomTransformation(
+        canvas as HTMLCanvasElement | null,
+        canvasContainer as HTMLDivElement | null
+      );
+      
+      // Notify parent component
+      onSpark(transformation);
+      
+      // Add delay to prevent rapid clicks
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 2500); // Slightly longer than animation duration
+    } catch (error) {
+      console.error('Error applying creativity transformation:', error);
+      setIsAnimating(false);
+    }
   };
-
+  
   return (
-    <Button
+    <button
       onClick={handleClick}
-      disabled={disabled || isSpinning}
-      className={`relative group overflow-hidden transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-pink-500 hover:via-purple-500 hover:to-indigo-500 text-white font-medium rounded-full px-5 py-2 shadow-lg hover:shadow-xl ${className} ${isSpinning ? 'animate-pulse' : ''}`}
+      disabled={disabled || isAnimating}
+      className={`
+        group relative flex items-center justify-center gap-2 overflow-hidden
+        rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 
+        px-4 py-2 font-medium text-white shadow-lg
+        transition-all duration-300 hover:scale-105 hover:shadow-xl
+        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+        disabled:opacity-60 disabled:cursor-not-allowed
+        ${isAnimating ? 'animate-pulse' : ''}
+        ${className}
+      `}
+      aria-label="Spark creativity"
     >
-      <span className="relative z-10 flex items-center gap-2">
-        {isSpinning ? (
-          <Wand2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <Sparkles className="h-5 w-5 transition-transform group-hover:scale-110" />
-        )}
-        <span>Creativity Spark</span>
-        <Zap className={`h-5 w-5 transition-all duration-300 ${isSpinning ? 'rotate-45 scale-125' : 'group-hover:rotate-12'}`} />
+      {/* Sparkles icon with animation */}
+      <Sparkles 
+        className={`h-5 w-5 transition-transform duration-300 
+          ${isAnimating ? 'animate-ping' : 'group-hover:scale-125 group-hover:rotate-12'}`} 
+      />
+      
+      {/* Button text */}
+      <span className="relative z-10">
+        {isAnimating ? 'Sparking Magic...' : 'Creativity Spark'}
       </span>
       
-      {/* Background sparkles */}
-      <div className="absolute inset-0 z-0 opacity-20">
-        <div className={`absolute top-1/4 left-1/4 h-2 w-2 rounded-full bg-white ${isSpinning ? 'animate-ping' : ''}`}></div>
-        <div className={`absolute top-1/2 right-1/4 h-2 w-2 rounded-full bg-white ${isSpinning ? 'animate-ping delay-100' : ''}`}></div>
-        <div className={`absolute bottom-1/4 left-1/3 h-2 w-2 rounded-full bg-white ${isSpinning ? 'animate-ping delay-200' : ''}`}></div>
-      </div>
-    </Button>
+      {/* Background animated glow effect */}
+      <span className="absolute inset-0 -z-10 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-0 blur-xl filter transition-opacity duration-1000 group-hover:opacity-70" />
+      
+      {/* Particle effects when animating */}
+      {isAnimating && (
+        <span className="absolute inset-0 -z-10">
+          <span className="absolute h-2 w-2 rounded-full bg-yellow-300 animate-ping" style={{ top: '20%', left: '30%' }} />
+          <span className="absolute h-2 w-2 rounded-full bg-blue-300 animate-ping" style={{ top: '60%', left: '70%', animationDelay: '0.2s' }} />
+          <span className="absolute h-2 w-2 rounded-full bg-pink-300 animate-ping" style={{ top: '30%', left: '80%', animationDelay: '0.5s' }} />
+        </span>
+      )}
+    </button>
   );
 };
 

@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // New endpoint for generating narration for the AI assistant
+  // Enhanced endpoint for generating narration for the AI assistant with multi-language support
   app.post("/api/generate-narration", async (req: Request, res: Response) => {
     try {
       // Validate request body
@@ -99,7 +99,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid request body", errors: result.error.errors });
       }
 
-      const { transcription } = req.body as GenerateSummaryRequest;
+      // Extract transcription and language from request
+      const { transcription, language = "english" } = req.body as GenerateSummaryRequest & { language?: string };
 
       // Ensure the DeepSeek API key is set
       const apiKey = process.env.DEEPSEEK_API_KEY;
@@ -107,7 +108,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "DeepSeek API key is not configured" });
       }
 
-      // Call DeepSeek API to generate a more conversational narration
+      // Detect language if not specified to ensure proper narration
+      const detectedLanguage = language || "english";
+      
+      // Prepare system prompt with language support
+      const systemPrompt = `You are an AI landscape guide with a friendly, engaging female voice. Your narration must consist of complete, grammatically correct sentences with proper punctuation in ${detectedLanguage}. 
+      
+Each sentence must be complete with subject and verb - never use fragments. Ensure the narration flows naturally and sounds engaging when read aloud. Write 6-8 well-formed sentences (120-180 words total).
+
+Always start with a welcoming opening and end with a clear concluding sentence. The narration should sound like a professional female tour guide explaining the landscape to visitors.`;
+
+      // Prepare user prompt with emphasis on complete sentences
+      const userPrompt = `Create a spoken narration in ${detectedLanguage} for a surreal landscape guide explaining a world inspired by these words: "${transcription}". 
+
+Follow these STRICT requirements:
+1. Every sentence MUST be complete with subject and verb
+2. Use 6-8 full, grammatically correct sentences 
+3. The narration should feel like a cohesive tour given by a female guide
+4. Begin with a welcome and end with a strong conclusion
+5. NEVER use sentence fragments or incomplete thoughts
+6. Include descriptive, sensory details about the landscape
+
+This narration will be read aloud by a text-to-speech system, so ensure it flows naturally when spoken.`;
+
+      // Call DeepSeek API with enhanced prompts for better speech quality
       const response = await axios.post(
         "https://api.deepseek.com/v1/chat/completions",
         {
@@ -115,14 +139,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           messages: [
             {
               role: "system",
-              content: "You are an AI landscape guide who explains surreal landscapes in a friendly, engaging voice. Your narration must consist of complete, grammatically correct sentences with proper punctuation. Avoid sentence fragments or incomplete thoughts. Each sentence should have a clear subject and verb. Keep your response between 100-150 words and use natural speech patterns suitable for text-to-speech. Always start with a welcome message and finish with a complete concluding sentence."
+              content: systemPrompt
             },
             {
               role: "user",
-              content: `Create a spoken narration for a surreal landscape guide explaining a world inspired by these words: "${transcription}". Ensure every sentence is complete and properly punctuated. Use 6-8 full sentences that would sound natural when read aloud.`
+              content: userPrompt
             }
           ],
-          max_tokens: 300
+          max_tokens: 400,
+          temperature: 0.7 // Slightly higher creativity while maintaining coherence
         },
         {
           headers: {
@@ -132,20 +157,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
-      // Extract the narration from the response
-      let narration = response.data.choices[0]?.message?.content || 
-        "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice. Each color and shape represents an aspect of your spoken input. The scenery evolves based on the emotions detected in your voice. Take a moment to appreciate this personalized visualization that transforms your thoughts into imagery.";
+      // Default fallback narrations in multiple languages
+      const fallbackNarrations: Record<string, string> = {
+        english: "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice. Each color and shape represents an aspect of your spoken input. The scenery evolves based on the emotions detected in your voice. Take a moment to appreciate this personalized visualization that transforms your thoughts into imagery.",
+        spanish: "Bienvenido a este paisaje surrealista creado a partir de tus palabras. Como puedes ver, los elementos de tu discurso se han manifestado en formas visuales, creando este entorno único. Siéntete libre de explorar y escuchar cómo el mundo responde a tu voz. Cada color y forma representa un aspecto de lo que has expresado. El escenario evoluciona según las emociones detectadas en tu voz. Tómate un momento para apreciar esta visualización personalizada que transforma tus pensamientos en imágenes.",
+        french: "Bienvenue dans ce paysage surréaliste créé à partir de vos mots. Comme vous pouvez le voir, les éléments de votre discours se sont manifestés sous des formes visuelles, créant cet environnement unique. N'hésitez pas à explorer et à écouter comment le monde répond à votre voix. Chaque couleur et forme représente un aspect de ce que vous avez exprimé. Le paysage évolue en fonction des émotions détectées dans votre voix. Prenez un moment pour apprécier cette visualisation personnalisée qui transforme vos pensées en images.",
+        german: "Willkommen in dieser surrealen Landschaft, die aus Ihren Worten erschaffen wurde. Wie Sie sehen können, haben sich die Elemente Ihrer Sprache in visuelle Formen manifestiert und diese einzigartige Umgebung geschaffen. Fühlen Sie sich frei, zu erkunden und zu hören, wie die Welt auf Ihre Stimme reagiert. Jede Farbe und Form repräsentiert einen Aspekt Ihrer Äußerungen. Die Szenerie entwickelt sich basierend auf den in Ihrer Stimme erkannten Emotionen. Nehmen Sie sich einen Moment Zeit, um diese personalisierte Visualisierung zu schätzen, die Ihre Gedanken in Bilder umwandelt.",
+        chinese: "欢迎来到这个由你的话语创造的超现实景观。如你所见，你的言语元素已经转化为视觉形式，创造了这个独特的环境。请随意探索并聆听世界如何回应你的声音。每种颜色和形状都代表你所表达的一个方面。场景会根据你声音中检测到的情绪而变化。花点时间欣赏这个将你的思想转化为图像的个性化视觉效果。",
+        japanese: "あなたの言葉から作られたこのシュールな風景へようこそ。ご覧のように、あなたのスピーチの要素が視覚的な形となって現れ、この独特な環境を作り出しています。自由に探索し、世界があなたの声にどのように反応するかを聞いてみてください。それぞれの色と形は、あなたが表現したことの一側面を表しています。風景はあなたの声から検出された感情に基づいて進化します。あなたの考えを画像に変換するこのパーソナライズされた視覚化を鑑賞する時間をとってください。"
+      };
+      
+      // Select appropriate fallback based on language
+      const fallbackNarration = fallbackNarrations[detectedLanguage.toLowerCase()] || fallbackNarrations.english;
 
-      // Ensure narration ends with proper punctuation
-      if (narration && !narration.endsWith('.') && !narration.endsWith('!') && !narration.endsWith('?')) {
-        narration += '.';
+      // Extract the narration from the response with careful error handling
+      let narration = "";
+      try {
+        narration = response.data.choices[0]?.message?.content || "";
+      } catch (e) {
+        console.error("Error extracting narration from API response:", e);
+        narration = "";
       }
       
-      // Ensure minimum length for complete narration
-      if (narration.split(' ').length < 30) {
-        narration = "Welcome to this surreal landscape created from your words. As you can see, the elements of your speech have manifested into visual forms, creating this unique environment. Feel free to explore and listen to how the world responds to your voice. Each color and shape represents an aspect of your spoken input. The scenery evolves based on the emotions detected in your voice. Take a moment to appreciate this personalized visualization that transforms your thoughts into imagery.";
+      // Validate the narration - must not be empty and must be sufficiently long
+      if (!narration.trim() || narration.split(/\s+/).length < 20) {
+        console.warn("Received invalid or short narration, using fallback");
+        narration = fallbackNarration;
       }
 
+      // Ensure narration ends with proper punctuation
+      const lastChar = narration.trim().slice(-1);
+      if (!['.', '!', '?', '。', '！', '？'].includes(lastChar)) {
+        narration = narration.trim() + '.';
+      }
+      
+      // Validate sentence structure and quality
+      const sentenceCount = narration.split(/[.!?。！？]+/).filter(s => s.trim().length > 0).length;
+      if (sentenceCount < 3) {
+        console.warn("Narration has too few sentences, using fallback");
+        narration = fallbackNarration;
+      }
+
+      console.log(`Generated ${detectedLanguage} narration with ${sentenceCount} sentences`);
+      
       // Return the generated narration
       return res.status(200).json({ narration });
     } catch (error) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
 
 // Define possible soundscape types
@@ -274,23 +274,38 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
           synthInst.triggerAttackRelease(randomNote, '8n', time, 0.2);
         }, '4n');
         
+        // Add time offset parameter to prevent timing conflicts
         newAmbienceLoop = new Tone.Loop((time) => {
-          noiseInst.triggerAttackRelease('8n', time, 0.02);
+          // Use a different offset time to avoid overlapping with the main loop
+          const safeTime = time + 0.25;
+          noiseInst.triggerAttackRelease('8n', safeTime, 0.02);
         }, '4n');
         break;
     }
     
-    // Start loops with proper error handling
+    // Start loops with proper error handling and staggered timing to prevent conflicts
     try {
+      // Track if loops were started successfully for better error handling
+      let mainLoopStarted = false;
+      let ambienceLoopStarted = false;
+      
       if (newMainLoop) {
-        newMainLoop.start(0);
+        // Use a small offset from 0 to ensure Tone.js is ready
+        newMainLoop.start("+0.1");
         setMainLoop(newMainLoop);
+        mainLoopStarted = true;
       }
       
       if (newAmbienceLoop) {
-        newAmbienceLoop.start(0);
+        // Use a different start time to avoid conflicts with main loop
+        // This prevents the timing conflict error
+        newAmbienceLoop.start("+0.35");
         setAmbienceLoop(newAmbienceLoop);
+        ambienceLoopStarted = true;
       }
+      
+      // Log successful loop initialization for debugging
+      console.log(`Loops initialized: main=${mainLoopStarted}, ambience=${ambienceLoopStarted}`);
     } catch (e) {
       console.error("Error starting audio loops:", e);
     }

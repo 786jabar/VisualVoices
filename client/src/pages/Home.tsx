@@ -20,7 +20,7 @@ import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { SupportedLanguage } from '@/hooks/useSpeechSynthesis';
 import { 
   getRandomTransformation, 
-  applyTransformation,
+  applyRandomTransformation,
   type CreativeTransformation 
 } from '@/lib/creativityTransformations';
 
@@ -253,28 +253,11 @@ export default function Home() {
     setActiveTransformation(transformation);
     setShowTransformationToast(true);
     
-    // Apply the transformation
-    const transformedState = applyTransformation(transformation, currentState);
+    // Since we're using the new implementation, we don't need to apply the transformation here
+    // as it's handled within the CreativitySparkButton component
     
-    // Update UI with transformed state
-    setTransformedColors(transformedState.colors);
-    
-    if (transformation.modifyIntensity !== undefined) {
-      setSettings(prev => ({
-        ...prev,
-        colorIntensity: transformedState.intensity
-      }));
-    }
-    
-    if (transformation.modifyMotion !== undefined) {
-      setSettings(prev => ({
-        ...prev,
-        motionEffects: transformedState.motion
-      }));
-    }
-    
-    // Play the associated sound effect
-    playTransformationSound(transformation.soundEffect);
+    // Play a sound effect for the transformation
+    playTransformationSound('magical');
     
     // Show a toast notification
     toast({
@@ -284,8 +267,8 @@ export default function Home() {
   };
   
   // Function to play sound effects for transformations
-  const playTransformationSound = (soundEffect: 'sparkle' | 'whoosh' | 'chime' | 'magical' | undefined) => {
-    if (!settings.audioEnabled || !soundEffect) return;
+  const playTransformationSound = (soundEffect: 'sparkle' | 'whoosh' | 'chime' | 'magical' | string) => {
+    if (!settings.audioEnabled) return;
     
     let audioElement: HTMLAudioElement | null = null;
     

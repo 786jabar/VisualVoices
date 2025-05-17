@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Sparkles, Zap } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { CreativeTransformation } from '@/lib/creativityTransformations';
 
 interface TransformationToastProps {
@@ -8,51 +8,81 @@ interface TransformationToastProps {
   onClose: () => void;
 }
 
+/**
+ * Toast notification that appears when a creativity transformation is applied
+ */
 const TransformationToast: React.FC<TransformationToastProps> = ({
   transformation,
   isVisible,
   onClose
 }) => {
-  // Auto-hide the toast after 4 seconds
+  // Close toast automatically after 5 seconds
   useEffect(() => {
     if (isVisible && transformation) {
       const timer = setTimeout(() => {
         onClose();
-      }, 4000);
+      }, 5000);
       
       return () => clearTimeout(timer);
     }
-  }, [isVisible, onClose, transformation]);
+  }, [isVisible, transformation, onClose]);
   
-  if (!isVisible || !transformation) return null;
+  // If no transformation or not visible, don't render
+  if (!isVisible || !transformation) {
+    return null;
+  }
+  
+  // Get color based on transformation intensity
+  const getIntensityColor = (intensity: string) => {
+    switch (intensity) {
+      case 'subtle': return 'bg-indigo-100 border-indigo-300 text-indigo-800';
+      case 'moderate': return 'bg-purple-100 border-purple-300 text-purple-800';
+      case 'dramatic': return 'bg-pink-100 border-pink-300 text-pink-800';
+      default: return 'bg-blue-100 border-blue-300 text-blue-800';
+    }
+  };
+  
+  // Get icon color based on transformation effect
+  const getEffectColor = (effect: string) => {
+    switch (effect) {
+      case 'color': return 'text-rose-500';
+      case 'shape': return 'text-violet-500';
+      case 'motion': return 'text-blue-500';
+      case 'particles': return 'text-amber-500';
+      case 'hybrid': return 'text-emerald-500';
+      default: return 'text-purple-500';
+    }
+  };
   
   return (
-    <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
-      <div className="relative bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-pink-500/90 rounded-lg shadow-xl p-4 max-w-md">
-        {/* Sparkle effects */}
-        <div className="absolute -top-2 -left-2 animate-pulse">
-          <Sparkles className="h-5 w-5 text-yellow-300" />
+    <div 
+      className={`
+        fixed top-6 right-6 z-50 flex max-w-md transform items-center justify-between 
+        rounded-lg border px-4 py-3 shadow-lg transition-all duration-500
+        ${getIntensityColor(transformation.intensity)}
+        ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
+      `}
+      role="alert"
+    >
+      <div className="flex items-center">
+        <div className="mr-3 flex-shrink-0">
+          <Sparkles className={`h-6 w-6 ${getEffectColor(transformation.visualEffect)}`} />
         </div>
-        <div className="absolute -bottom-2 -right-2 animate-pulse">
-          <Sparkles className="h-5 w-5 text-yellow-300" />
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-full">
-            <Zap className="h-6 w-6 text-yellow-300" />
-          </div>
-          
-          <div>
-            <h3 className="text-white font-bold text-lg">{transformation.name}</h3>
-            <p className="text-white/80 text-sm">{transformation.description}</p>
-          </div>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="mt-3 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-          <div className="h-full bg-white/60 rounded-full animate-progress-shrink" style={{ width: '100%' }}></div>
+        <div>
+          <p className="font-bold">{transformation.name}</p>
+          <p className="text-sm">{transformation.description}</p>
         </div>
       </div>
+      <button 
+        type="button"
+        onClick={onClose}
+        className="ml-4 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      >
+        <span className="sr-only">Close</span>
+        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
     </div>
   );
 };
