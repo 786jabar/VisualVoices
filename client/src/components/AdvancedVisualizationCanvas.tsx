@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { use3DVisualization } from '@/hooks/use3DVisualization';
+// Import from Lucide React instead
 import { 
-  IconTrash,
-  IconMessage, 
-  IconMicrophone,
-  IconMicrophoneOff,
-  IconBulb
-} from '@/components/ui/icons';
+  Trash as IconTrash,
+  MessageSquare as IconMessage, 
+  Mic as IconMicrophone,
+  MicOff as IconMicrophoneOff,
+  Lightbulb as IconBulb
+} from 'lucide-react';
 
 interface AdvancedVisualizationCanvasProps {
   sentiment: 'Negative' | 'Neutral' | 'Positive';
