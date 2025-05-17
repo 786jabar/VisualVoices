@@ -428,11 +428,29 @@ This narration will be read aloud by a text-to-speech system, so ensure it flows
   app.get("/api/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok" });
   });
+  
+  // WebSocket connection status endpoint
+  app.get("/api/ws-status", (_req: Request, res: Response) => {
+    res.status(200).json({ 
+      status: "ok",
+      wsEnabled: true,
+      activeSessions: connectedClients.size,
+      activeRooms: collaborationRooms.size
+    });
+  });
 
   const httpServer = createServer(app);
   
   // Create WebSocket server for real-time collaboration
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Using '/ws' path to avoid conflicts with Vite's HMR WebSocket
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    // Add permissive CORS settings for development
+    verifyClient: (info, cb) => {
+      cb(true); // Accept all connections during development
+    }
+  });
   
   // Track connected clients and their rooms
   const connectedClients = new Map<WebSocket, {
@@ -453,30 +471,41 @@ This narration will be read aloud by a text-to-speech system, so ensure it flows
     console.log('New WebSocket connection established');
     
     // Handle messages from clients
-    ws.on('message', (message: string) => {
+    ws.on('message', (message) => {
       try {
-        const data = JSON.parse(message.toString());
+        // Ensure proper string conversion
+        const messageStr = message instanceof Buffer 
+          ? message.toString() 
+          : typeof message === 'string' 
+            ? message
+            : JSON.stringify(message);
+            
+        const data = JSON.parse(messageStr);
         
         // Handle different message types
         switch (data.type) {
           case 'join':
+          case 'join_room':
             handleJoinRoom(ws, data);
             break;
           case 'create':
+          case 'create_room':
             handleCreateRoom(ws, data);
             break;
           case 'leave':
+          case 'leave_room':
             handleLeaveRoom(ws, data);
             break;
           case 'update':
+          case 'visualization_update':
             handleVisualizationUpdate(ws, data);
             break;
           case 'chat':
+          case 'chat_message':
             handleChatMessage(ws, data);
             break;
           default:
             console.warn('Unknown message type:', data.type);
-        }
       } catch (error) {
         console.error('Error handling WebSocket message:', error);
         sendToClient(ws, {
