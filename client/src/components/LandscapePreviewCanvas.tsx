@@ -600,7 +600,7 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         for (let y = 0; y < rows-1; y++) {
           p.beginShape(p.TRIANGLE_STRIP);
           for (let x = 0; x < cols; x++) {
-            if (useBlend && x % 2 === 0) {
+            if (blendEnabled && x % 2 === 0) {
               try {
                 p.fill(p.lerpColor(primaryColor, secondaryColor, p.noise(x*0.1, y*0.1)));
               } catch (err) {
