@@ -506,6 +506,7 @@ This narration will be read aloud by a text-to-speech system, so ensure it flows
             break;
           default:
             console.warn('Unknown message type:', data.type);
+        }
       } catch (error) {
         console.error('Error handling WebSocket message:', error);
         sendToClient(ws, {
