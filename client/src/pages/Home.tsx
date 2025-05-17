@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { downloadCanvasAsImage } from '@/lib/utils';
@@ -332,10 +332,10 @@ export default function Home() {
       // Release global audio lock
       stopPlayback();
       
-      // Toggle audio if necessary
+      // Stop audio playback with improved stability
       if (isAudioInitialized && isAudioPlaying) {
         try {
-          await toggleAudio();
+          stopAudioPlayback();
         } catch (error) {
           console.error('Error stopping audio:', error);
         }
@@ -358,13 +358,13 @@ export default function Home() {
             });
           }
         } else {
-          // Toggle audio state
+          // Update audio state with improved stability
           setSettings({...settings, audioEnabled: true});
           
           // Start audio if it's not playing
           if (!isAudioPlaying) {
             try {
-              await toggleAudio();
+              startAudioPlayback();
             } catch (error) {
               console.error('Error starting audio:', error);
             }

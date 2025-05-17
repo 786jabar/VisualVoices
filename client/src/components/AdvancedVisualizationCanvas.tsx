@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import { use3DVisualization } from '@/hooks/use3DVisualization';
-import { cn, getSentimentEmoji, getSentimentDescription } from '@/lib/utils';
-import { Loader2, Sparkles } from 'lucide-react';
+import { 
+  IconTrash,
+  IconMessage, 
+  IconMicrophone,
+  IconMicrophoneOff,
+  IconBulb
+} from '@/components/ui/icons';
 
 interface AdvancedVisualizationCanvasProps {
   sentiment: 'Negative' | 'Neutral' | 'Positive';
@@ -16,109 +22,169 @@ interface AdvancedVisualizationCanvasProps {
 
 /**
  * Advanced 3D visualization canvas that continues animating during speech
+ * with improved stability and less resource usage
  */
-const AdvancedVisualizationCanvas: React.FC<AdvancedVisualizationCanvasProps> = ({
+export default function AdvancedVisualizationCanvas({
   sentiment,
   sentimentScore,
   text,
   isProcessing,
-  processingMessage = 'Generating poetic summary...',
+  processingMessage = 'Generating poetic description...',
   colorIntensity,
   motion,
   onClearSummary
-}) => {
-  const { containerRef, saveCanvas } = use3DVisualization({
+}: AdvancedVisualizationCanvasProps) {
+  // Use the 3D visualization hook for continuous animation
+  const { canvasRef, getColors } = use3DVisualization({
     sentiment,
     sentimentScore,
     text,
-    colorIntensity,
-    motion
+    motion,
+    colorIntensity
   });
   
-  // Show initial guidance prompt if no text yet
-  const showGuidance = !text && !isProcessing;
+  // Local state for processing indicator animation
+  const [processedWords, setProcessedWords] = useState<string[]>([]);
+  const [displayText, setDisplayText] = useState('');
+  const wordsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Animation frames for the sparkling effect
-  const [sparkleOpacity, setSparkleOpacity] = useState(0.6);
+  // Color palette for the current sentiment
+  const colors = getColors();
   
+  // Animate the processing text
   useEffect(() => {
-    if (showGuidance) {
-      // Create pulsing animation for guidance
-      const interval = setInterval(() => {
-        setSparkleOpacity(prev => prev === 0.6 ? 1 : 0.6);
-      }, 1500);
+    if (isProcessing) {
+      // Split the text into an array of words
+      const words = text.split(' ').filter(word => word.trim() !== '');
+      setProcessedWords(words);
       
-      return () => clearInterval(interval);
+      // Start with an empty display
+      setDisplayText('');
+      
+      // Animate words appearing one by one
+      let currentIndex = 0;
+      
+      const animateNextWord = () => {
+        if (currentIndex < words.length) {
+          setDisplayText(prev => 
+            prev + (prev ? ' ' : '') + words[currentIndex]
+          );
+          currentIndex++;
+          
+          // Schedule the next word
+          wordsTimeoutRef.current = setTimeout(
+            animateNextWord, 
+            Math.random() * 100 + 100 // Random timing between 100-200ms
+          );
+        }
+      };
+      
+      // Start the animation
+      wordsTimeoutRef.current = setTimeout(animateNextWord, 500);
+      
+      // Cleanup
+      return () => {
+        if (wordsTimeoutRef.current) {
+          clearTimeout(wordsTimeoutRef.current);
+        }
+      };
     }
-  }, [showGuidance]);
+  }, [isProcessing, text]);
   
   return (
-    <section id="visualizationContainer" className="relative flex-1 bg-black overflow-hidden">
-      {/* 3D Visualization Canvas Container */}
-      <div 
-        ref={containerRef} 
-        className="absolute inset-0 w-full h-full" 
-        style={{ display: 'block', position: 'absolute', width: '100%', height: '100%' }}
-      ></div>
+    <div className="relative w-full h-full overflow-hidden bg-black rounded-lg">
+      {/* Main 3D canvas - always renders */}
+      <canvas 
+        ref={canvasRef} 
+        className="absolute inset-0 w-full h-full z-10"
+      />
       
-      {/* Floating Info Badge - shows when visualization is active but not processing */}
-      {text && !isProcessing && (
-        <div className="absolute top-4 left-4 bg-gray-900/80 backdrop-blur-sm rounded-lg p-2 text-xs text-white border border-gray-800 animate-fadeIn transition-all duration-300 z-10">
-          <div className="flex items-center space-x-2">
-            <span>{getSentimentEmoji(sentiment)}</span>
-            <span>{getSentimentDescription(sentiment)}</span>
+      {/* Show the processing overlay when generating AI summary */}
+      {isProcessing && (
+        <div className="absolute inset-0 z-20 bg-black/20 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
+          <div className="text-xl font-bold mb-2" style={{ color: colors.accent }}>
+            {processingMessage}
           </div>
-        </div>
-      )}
-      
-      {/* Clear Summary Button - shows when there's text to clear */}
-      {text && !isProcessing && onClearSummary && (
-        <button
-          onClick={onClearSummary}
-          className="absolute top-4 right-4 bg-gray-900/80 backdrop-blur-sm rounded-full p-2 text-xs text-white border border-gray-800 hover:bg-gray-800 transition-all duration-300 z-10 flex items-center space-x-1"
-          title="Clear summary"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6L6 18M6 6l12 12"></path>
-          </svg>
-          <span>Clear</span>
-        </button>
-      )}
-      
-      {/* Initial guidance overlay */}
-      {showGuidance && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/30 backdrop-blur-sm">
-          <div 
-            className="max-w-md text-center p-8" 
-            style={{ opacity: sparkleOpacity }}
-          >
-            <Sparkles className="h-8 w-8 text-indigo-400 mx-auto mb-3 animate-slow-spin" />
-            <h2 className="text-white text-xl font-bold mb-2">Speak to Create</h2>
-            <p className="text-gray-300 mb-6">
-              Your voice will transform this blank canvas into a living, surreal landscape
-              that evolves with your words and emotions.
-            </p>
-            <div className="text-sm text-gray-400">
-              Click the "Start Speaking" button to begin your creation →
+          
+          <div className="w-full max-w-3xl my-6 overflow-hidden">
+            <div className="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full transition-all duration-300 ease-out rounded-full"
+                style={{ 
+                  width: `${(processedWords.length > 0 ? displayText.split(' ').length / processedWords.length : 0) * 100}%`,
+                  backgroundColor: colors.accent
+                }}
+              />
             </div>
           </div>
+          
+          <div 
+            className="text-sm max-w-2xl overflow-hidden text-gray-200 whitespace-pre-wrap h-40 overflow-y-auto"
+            style={{ 
+              textShadow: `0 0 10px ${colors.primary}40`,
+            }}
+          >
+            {displayText}
+          </div>
         </div>
       )}
       
-      {/* Processing overlay */}
-      <div 
-        className={cn(
-          "absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-opacity duration-500",
-          isProcessing ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-      >
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 text-white mx-auto mb-4 animate-spin" />
-          <p className="text-white font-medium">{processingMessage}</p>
+      {/* Speech indicator */}
+      {text && !isProcessing && (
+        <div className="absolute bottom-4 right-4 z-30">
+          <div 
+            className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm"
+            style={{ 
+              backgroundColor: `${colors.background}CC`,
+              border: `1px solid ${colors.primary}40`,
+            }}
+          >
+            <IconMicrophone className="w-4 h-4 text-green-400 animate-pulse" />
+            <span className="text-white">Recording in progress</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Clear Summary button */}
+      {onClearSummary && !isProcessing && (
+        <div className="absolute top-4 right-4 z-30">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearSummary}
+            className="bg-black/40 border-gray-600 hover:bg-black/60 text-white"
+          >
+            <IconTrash className="w-4 h-4 mr-2" />
+            <span>Clear Summary</span>
+          </Button>
+        </div>
+      )}
+      
+      {/* Sentiment indicator */}
+      <div className="absolute top-4 left-4 z-30">
+        <div 
+          className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm"
+          style={{ 
+            backgroundColor: `${colors.background}CC`,
+            border: `1px solid ${colors.primary}40`
+          }}
+        >
+          <div 
+            className="w-3 h-3 rounded-full"
+            style={{ 
+              backgroundColor: 
+                sentiment === 'Positive' ? '#06d6a0' : 
+                sentiment === 'Negative' ? '#ef476f' : 
+                '#118ab2'
+            }}
+          />
+          <span className="text-white">
+            {sentiment === 'Positive' ? 'Positive' : 
+             sentiment === 'Negative' ? 'Negative' : 
+             'Neutral'} ({sentimentScore.toFixed(2)})
+          </span>
         </div>
       </div>
-    </section>
+    </div>
   );
-};
-
-export default AdvancedVisualizationCanvas;
+}
