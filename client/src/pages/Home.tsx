@@ -15,7 +15,7 @@ import CreativitySparkButton from '@/components/CreativitySparkButton';
 import TransformationToast from '@/components/TransformationToast';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
-import { useStableToneAudio } from '@/hooks/useStableToneAudio';
+import { use3DAudio } from '@/hooks/use3DAudio';
 import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { SupportedLanguage } from '@/hooks/useSpeechSynthesis';
 import { 
@@ -93,13 +93,14 @@ export default function Home() {
   // Use audio coordinator to prevent conflicts with gallery audio
   const { isActive: isAudioApproved, requestPlayback, stopPlayback } = useAudioCoordinator('home-dashboard');
   
-  // Audio hook for tone generation
+  // Enhanced 3D audio hook with stable playback during voice recording
   const { 
     initialize: initializeAudio, 
     isInitialized: isAudioInitialized,
     isPlaying: isAudioPlaying,
-    toggle: toggleAudio 
-  } = useToneAudio({
+    startPlayback: startAudioPlayback,
+    stopPlayback: stopAudioPlayback
+  } = use3DAudio({
     sentiment,
     sentimentScore,
     isActive: settings.audioEnabled && isAudioApproved,
@@ -313,7 +314,16 @@ export default function Home() {
     }
   };
   
-  // Handle toggle audio with global coordination
+  // Function to clear the AI-generated poetic summary
+  const handleClearSummary = useCallback(() => {
+    setPoeticSummary(null);
+    toast({
+      title: 'Summary cleared',
+      description: 'The AI-generated poetic summary has been removed',
+    });
+  }, [toast]);
+
+  // Handle toggle audio with global coordination and improved stability
   const handleToggleAudio = async () => {
     if (settings.audioEnabled) {
       // Turn off audio
