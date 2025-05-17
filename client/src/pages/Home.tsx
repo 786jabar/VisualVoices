@@ -407,7 +407,7 @@ export default function Home() {
         {/* Dashboard Content with glass morphism */}
         <div className="relative z-10 flex flex-col lg:flex-row w-full h-full">
           {/* Left Panel - Visualization Area */}
-          <div className="lg:w-2/3 relative flex flex-col h-full">
+          <div className="lg:w-3/4 relative flex flex-col h-full">
             {/* Active Visualization Canvas - shows when speaking/processing */}
             <div className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${isListening || transcript ? 'opacity-100' : 'opacity-0'}`}>
               <AdvancedVisualizationCanvas 
