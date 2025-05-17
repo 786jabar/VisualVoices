@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { Settings, HelpCircle, History, Save } from 'lucide-react';
 
 interface HeaderProps {
   onHelpClick: () => void;
@@ -15,7 +16,23 @@ const Header: FC<HeaderProps> = ({ onHelpClick, onSettingsClick }) => {
         <h1 className="text-xl sm:text-2xl font-poppins font-semibold text-white">Vocal<span className="text-primary">Earth</span></h1>
       </div>
       
-      {/* Removed icons per design update */}
+      {/* Added back useful icons with modern design */}
+      <div className="flex items-center space-x-4">
+        <button 
+          onClick={onSettingsClick}
+          className="p-2 text-gray-300 hover:text-white transition-colors"
+          aria-label="Settings"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={onHelpClick}
+          className="p-2 text-gray-300 hover:text-white transition-colors"
+          aria-label="Help"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+      </div>
     </header>
   );
 };

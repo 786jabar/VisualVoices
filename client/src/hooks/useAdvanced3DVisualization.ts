@@ -804,13 +804,13 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
       p.vy *= speedMod;
       p.vz *= speedMod;
       
-      // Update position
-      p.x += p.vx * deltaTime * 30;
-      p.y += p.vy * deltaTime * 30;
-      p.z += p.vz * deltaTime * 30;
+      // Update position - increased speed multiplier for faster animation
+      p.x += p.vx * deltaTime * 90; // 3x faster movement
+      p.y += p.vy * deltaTime * 90; // 3x faster movement
+      p.z += p.vz * deltaTime * 90; // 3x faster movement
       
-      // Update rotation
-      p.rotation += p.rotationSpeed * deltaTime * 30;
+      // Update rotation - increased speed for faster animation
+      p.rotation += p.rotationSpeed * deltaTime * 90; // 3x faster rotation
       
       // Apply size modifier
       p.size = p.baseSize * sizeMod * (0.5 + p.life / p.maxLife * 0.5);
@@ -830,8 +830,8 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
     if (!canvasRef.current) return;
     const { width, height } = canvasRef.current;
     
-    // Add new particles based on sentiment intensity
-    const newParticleCount = Math.round(deltaTime * 20 * Math.abs(sentimentScore) * lifeMod);
+    // Add new particles based on sentiment intensity - increased for more visual richness
+    const newParticleCount = Math.round(deltaTime * 60 * Math.abs(sentimentScore) * lifeMod); // 3x more particles
     
     for (let i = 0; i < newParticleCount; i++) {
       // Determine particle type based on sentiment
