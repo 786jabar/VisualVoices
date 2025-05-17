@@ -74,8 +74,7 @@ export function useStableSoundscapes(options: SoundscapeOptions): MultipleSounds
         debounceTimerRef.current = null;
       }
       
-      // Remove state change listener
-      Tone.context.onstatechange = null;
+      // No need to remove listener as we're not using onstatechange
       
       // Clean up all audio resources
       const disposeLoop = (loop: Tone.Loop | null) => {

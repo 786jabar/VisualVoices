@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { useP5Visualization } from '@/hooks/useP5Visualization';
+import { useSimpleVisualization } from '@/hooks/useSimpleVisualization';
 import { cn, getSentimentEmoji, getSentimentDescription } from '@/lib/utils';
 import { Loader2, Sparkles } from 'lucide-react';
 
@@ -22,7 +22,7 @@ const VisualizationCanvas: FC<VisualizationCanvasProps> = ({
   colorIntensity,
   motion
 }) => {
-  const { canvasRef, saveCanvas } = useP5Visualization({
+  const { canvasRef, saveCanvas } = useSimpleVisualization({
     sentiment,
     sentimentScore,
     text,
