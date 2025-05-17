@@ -10,10 +10,12 @@ import HelpModal from '@/components/HelpModal';
 import SettingsModal from '@/components/SettingsModal';
 import EmotionTracker from '@/components/EmotionTracker';
 import SocialShareModal from '@/components/SocialShareModal';
+import DashboardLandscapes from '@/components/DashboardLandscapes';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useToneAudio } from '@/hooks/useToneAudio';
 import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
+import { SupportedLanguage } from '@/hooks/useSpeechSynthesis';
 
 export default function Home() {
   const { toast } = useToast();
@@ -24,8 +26,17 @@ export default function Home() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string>('');
   
+  // Define settings type
+  interface AppSettings {
+    audioEnabled: boolean;
+    audioVolume: number;
+    colorIntensity: boolean;
+    motionEffects: boolean;
+    language: SupportedLanguage;
+  }
+  
   // State for settings
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<AppSettings>({
     audioEnabled: true,
     audioVolume: 0.6,
     colorIntensity: true,
