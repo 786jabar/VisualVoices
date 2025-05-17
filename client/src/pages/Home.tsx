@@ -256,7 +256,7 @@ export default function Home() {
   }, [browserSupportsSpeechRecognition, toast]);
   
   return (
-    <div className="relative h-screen flex flex-col overflow-hidden">
+    <div className="relative h-screen flex flex-col overflow-hidden bg-black text-white">
       {/* Header */}
       <Header 
         onHelpClick={() => setIsHelpModalOpen(true)}
@@ -264,34 +264,79 @@ export default function Home() {
       />
       
       {/* Main Content */}
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Visualization Canvas */}
-        <VisualizationCanvas 
-          sentiment={sentiment}
-          sentimentScore={sentimentScore}
-          text={transcript}
-          isProcessing={summaryMutation.isPending}
-          colorIntensity={settings.colorIntensity}
-          motion={settings.motionEffects}
-        />
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        {/* Background Landscapes - rotates landscapes every 15 seconds */}
+        <div className="absolute inset-0 z-0 opacity-40">
+          <DashboardLandscapes isActive={!isListening} />
+        </div>
         
-        {/* Control Panel */}
-        <ControlPanel 
-          isListening={isListening}
-          onStartSpeaking={handleStartSpeaking}
-          onStopSpeaking={handleStopSpeaking}
-          transcription={transcript}
-          sentiment={sentiment}
-          sentimentScore={sentimentScore}
-          poeticSummary={poeticSummary}
-          isProcessingSummary={summaryMutation.isPending}
-          onSaveImage={handleSaveImage}
-          onShareImage={handleShare}
-          isAudioEnabled={settings.audioEnabled}
-          onToggleAudio={handleToggleAudio}
-          colorIntensity={settings.colorIntensity}
-          motion={settings.motionEffects}
-        />
+        {/* Dashboard Content with glass morphism */}
+        <div className="relative z-10 flex flex-col lg:flex-row w-full h-full">
+          {/* Left Panel - Visualization Area */}
+          <div className="lg:w-2/3 relative flex flex-col">
+            {/* Active Visualization Canvas - shows when speaking/processing */}
+            <div className={`absolute inset-0 transition-opacity duration-500 ${isListening || transcript ? 'opacity-100' : 'opacity-0'}`}>
+              <VisualizationCanvas 
+                sentiment={sentiment}
+                sentimentScore={sentimentScore}
+                text={transcript}
+                isProcessing={summaryMutation.isPending}
+                colorIntensity={settings.colorIntensity}
+                motion={settings.motionEffects}
+              />
+            </div>
+            
+            {/* Dashboard Central Title - shows when not actively visualizing */}
+            <div 
+              className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${!isListening && !transcript ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <div className="text-center p-6 backdrop-blur-sm bg-black/20 rounded-xl max-w-md">
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
+                  Vocal Earth
+                </h1>
+                <p className="text-lg text-gray-200 mb-6">
+                  Transform your voice into stunning visual landscapes powered by AI
+                </p>
+                <button 
+                  onClick={handleStartSpeaking}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                >
+                  Start Speaking
+                </button>
+              </div>
+            </div>
+            
+            {/* Emotion Tracker - always visible on top */}
+            <div className="absolute bottom-4 left-4 z-20">
+              <EmotionTracker 
+                sentimentScore={sentimentScore} 
+                transcript={transcript}
+                isListening={isListening}
+                className="w-60 md:w-72 bg-black/50 backdrop-blur-sm p-3 rounded-lg"
+              />
+            </div>
+          </div>
+          
+          {/* Right Panel - Controls */}
+          <div className="lg:w-1/3 backdrop-blur-sm bg-black/30 border-l border-gray-800 p-4 overflow-auto">
+            <ControlPanel 
+              isListening={isListening}
+              onStartSpeaking={handleStartSpeaking}
+              onStopSpeaking={handleStopSpeaking}
+              transcription={transcript}
+              sentiment={sentiment}
+              sentimentScore={sentimentScore}
+              poeticSummary={poeticSummary}
+              isProcessingSummary={summaryMutation.isPending}
+              onSaveImage={handleSaveImage}
+              onShareImage={handleShare}
+              isAudioEnabled={settings.audioEnabled}
+              onToggleAudio={handleToggleAudio}
+              colorIntensity={settings.colorIntensity}
+              motion={settings.motionEffects}
+            />
+          </div>
+        </div>
       </main>
       
       {/* Modals */}

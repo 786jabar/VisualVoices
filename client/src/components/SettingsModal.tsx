@@ -130,39 +130,59 @@ const SettingsModal: FC<SettingsModalProps> = ({
             </div>
           </div>
           
-          <div>
-            <h4 className="font-medium mb-3">Language Settings</h4>
+          <div className="bg-gradient-to-r from-dark-300/50 to-dark-200/30 p-4 rounded-lg border border-dark-300/60">
+            <h4 className="font-medium mb-3 text-primary-light flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m5 8 6 6 6-6"/>
+                <path d="M12 2v12"/>
+                <path d="M5 14a5 5 0 0 0 7 7 5 5 0 0 0 7-7H5Z"/>
+              </svg>
+              Language Settings
+            </h4>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="language-select" className="text-sm block mb-1">
+                <Label htmlFor="language-select" className="text-sm block mb-1 font-medium">
                   Voice Recognition & AI Speech Language
                 </Label>
-                <Select 
-                  value={localSettings.language}
-                  onValueChange={(value: string) => {
-                    // Validate that the selected language is in our supported list
-                    if (Object.keys(SUPPORTED_LANGUAGES).includes(value)) {
-                      const supportedLang = value as SupportedLanguage;
-                      setLocalSettings({...localSettings, language: supportedLang});
-                      // Store language preference in localStorage for speech recognition and synthesis
-                      localStorage.setItem('preferredLanguage', supportedLang);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full bg-dark-200 border-dark-300">
-                    <SelectValue placeholder="Select a language" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-dark-100 border-dark-300 max-h-[300px]">
-                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, { name, nativeName }]) => (
-                      <SelectItem key={code} value={code}>
-                        {name} {name !== nativeName ? `(${nativeName})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-dark-500 text-xs mt-1.5">
-                  This will affect both voice recognition and AI narration language.
-                </p>
+                <div className="relative">
+                  <Select 
+                    value={localSettings.language}
+                    onValueChange={(value: string) => {
+                      // Validate that the selected language is in our supported list
+                      if (Object.keys(SUPPORTED_LANGUAGES).includes(value)) {
+                        const supportedLang = value as SupportedLanguage;
+                        setLocalSettings({...localSettings, language: supportedLang});
+                        // Store language preference in localStorage for speech recognition and synthesis
+                        localStorage.setItem('preferredLanguage', supportedLang);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full bg-dark-200 border-dark-300 pr-10">
+                      <SelectValue placeholder="Select a language" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-dark-100 border-dark-300 max-h-[300px]">
+                      <div className="p-2 bg-primary/10 border-b border-dark-300 mb-1">
+                        <p className="text-xs font-medium text-primary-light">18 languages available</p>
+                      </div>
+                      {Object.entries(SUPPORTED_LANGUAGES).map(([code, { name, nativeName }]) => (
+                        <SelectItem key={code} value={code} className="focus:bg-primary/20 focus:text-white">
+                          <div className="flex items-center justify-between w-full">
+                            <span>{name}</span>
+                            {name !== nativeName && (
+                              <span className="ml-2 text-dark-500 text-xs">{nativeName}</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="bg-dark-300/30 p-2 rounded mt-2 border border-dark-300/50">
+                  <p className="text-dark-400 text-xs">
+                    Vocal Earth supports 18 languages for both voice recognition and AI narration. 
+                    The AI will speak using a natural female voice in your selected language.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
