@@ -488,6 +488,9 @@ export default function Home() {
               colorIntensity={settings.colorIntensity}
               motion={settings.motionEffects}
               onCollaborationToggle={() => setIsCollaborationActive(!isCollaborationActive)}
+              currentThemeId={currentThemeId}
+              onThemeChange={handleThemeChange}
+              onClearSummary={handleClearSummary}
             />
           </div>
         </div>

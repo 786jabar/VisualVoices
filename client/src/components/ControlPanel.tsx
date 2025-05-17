@@ -575,7 +575,27 @@ const ControlPanel: FC<ControlPanelProps> = ({
       
       {/* Action Buttons */}
       <div className="p-4 border-t border-gray-800 bg-gray-900/70">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          {/* Theme Toggle Button */}
+          {onThemeChange && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <VisualizationThemeToggle
+                      onSelectTheme={onThemeChange}
+                      currentTheme={currentThemeId}
+                      className="w-full h-full bg-purple-700 hover:bg-purple-600 text-white border border-purple-500"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Change visualization theme</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
           {/* Save to Gallery Dialog */}
           <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
             <DialogTrigger asChild>
