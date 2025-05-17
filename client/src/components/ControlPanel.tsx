@@ -79,7 +79,8 @@ const ControlPanel: FC<ControlPanelProps> = ({
   isAudioEnabled,
   onToggleAudio,
   colorIntensity,
-  motion
+  motion,
+  onCollaborationToggle
 }) => {
   const { toast } = useToast();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -350,6 +351,24 @@ const ControlPanel: FC<ControlPanelProps> = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            
+            {onCollaborationToggle && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="bg-purple-700 hover:bg-purple-600 text-white"
+                      onClick={onCollaborationToggle}
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Start or join collaborative session</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </div>
       </div>

@@ -497,6 +497,33 @@ export default function Home() {
       />
       
       {/* Social Share Modal */}
+      {/* Collaborative Visualization Mode */}
+      {isCollaborationActive && (
+        <div className="fixed inset-0 z-50 bg-black">
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCollaborationActive(false)}
+              className="bg-black/40 border-gray-600 hover:bg-black/60 text-white"
+            >
+              <X className="h-4 w-4 mr-2" />
+              <span>Exit Collaboration</span>
+            </Button>
+          </div>
+          
+          <CollaborativeVisualizer
+            initialSentiment={sentiment}
+            initialSentimentScore={sentimentScore}
+            initialText={transcript}
+            initialColorIntensity={settings.colorIntensity}
+            initialMotion={settings.motionEffects}
+            poeticSummary={poeticSummary}
+            onClose={() => setIsCollaborationActive(false)}
+          />
+        </div>
+      )}
+
       <SocialShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
