@@ -98,7 +98,7 @@ export default function Home() {
     initialize: initializeAudio, 
     isInitialized: isAudioInitialized,
     isPlaying: isAudioPlaying,
-    togglePlay: toggleAudio 
+    toggle: toggleAudio 
   } = useToneAudio({
     sentiment,
     sentimentScore,
@@ -228,6 +228,104 @@ export default function Home() {
         title: 'Error',
         description: 'Failed to prepare visualization for sharing',
         variant: 'destructive'
+      });
+    }
+  };
+  
+  // Function to handle the creativity spark button click
+  const handleCreativitySpark = () => {
+    // Get current state to apply transformation to
+    const currentState = {
+      sentiment: sentiment === 'Positive' ? sentimentScore : 
+                 sentiment === 'Negative' ? -sentimentScore : 0,
+      colors: transformedColors,
+      motion: settings.motionEffects,
+      intensity: settings.colorIntensity
+    };
+    
+    // Save original state if this is the first transformation
+    if (!originalState) {
+      setOriginalState(currentState);
+    }
+    
+    // Get a random transformation
+    const transformation = getRandomTransformation();
+    setActiveTransformation(transformation);
+    setShowTransformationToast(true);
+    
+    // Apply the transformation
+    const transformedState = applyTransformation(transformation, currentState);
+    
+    // Update UI with transformed state
+    setTransformedColors(transformedState.colors);
+    
+    if (transformation.modifyIntensity !== undefined) {
+      setSettings(prev => ({
+        ...prev,
+        colorIntensity: transformedState.intensity
+      }));
+    }
+    
+    if (transformation.modifyMotion !== undefined) {
+      setSettings(prev => ({
+        ...prev,
+        motionEffects: transformedState.motion
+      }));
+    }
+    
+    // Play the associated sound effect
+    playTransformationSound(transformation.soundEffect);
+    
+    // Show a toast notification
+    toast({
+      title: transformation.name,
+      description: transformation.description,
+    });
+  };
+  
+  // Function to play sound effects for transformations
+  const playTransformationSound = (soundEffect: 'sparkle' | 'whoosh' | 'chime' | 'magical' | undefined) => {
+    if (!settings.audioEnabled || !soundEffect) return;
+    
+    let audioElement: HTMLAudioElement | null = null;
+    
+    switch (soundEffect) {
+      case 'sparkle':
+        audioElement = sparkleAudioRef.current;
+        break;
+      case 'whoosh':
+        audioElement = whooshAudioRef.current;
+        break;
+      case 'chime':
+        audioElement = chimeAudioRef.current;
+        break;
+      case 'magical':
+        audioElement = magicalAudioRef.current;
+        break;
+    }
+    
+    if (audioElement) {
+      audioElement.volume = settings.audioVolume;
+      audioElement.currentTime = 0;
+      audioElement.play().catch(err => console.error('Error playing audio:', err));
+    }
+  };
+  
+  // Function to reset transformations
+  const resetTransformations = () => {
+    if (originalState) {
+      setTransformedColors(originalState.colors);
+      setSettings(prev => ({
+        ...prev,
+        colorIntensity: originalState.intensity,
+        motionEffects: originalState.motion
+      }));
+      setOriginalState(null);
+      setActiveTransformation(null);
+      
+      toast({
+        title: 'Reset Complete',
+        description: 'Visualization returned to original state',
       });
     }
   };
