@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { use3DVisualization } from '@/hooks/use3DVisualization';
-// Import from Lucide React instead
+import { useAdvanced3DVisualization } from '@/hooks/useAdvanced3DVisualization';
 import { 
-  Trash as IconTrash,
-  MessageSquare as IconMessage, 
-  Mic as IconMicrophone,
-  MicOff as IconMicrophoneOff,
-  Lightbulb as IconBulb
+  Trash,
+  MessageSquare,
+  Mic,
+  MicOff,
+  Lightbulb
 } from 'lucide-react';
 
 interface AdvancedVisualizationCanvasProps {
@@ -18,12 +17,16 @@ interface AdvancedVisualizationCanvasProps {
   processingMessage?: string;
   colorIntensity: boolean;
   motion: boolean;
-  onClearSummary?: () => void; // New prop for clearing summary
+  onClearSummary?: () => void; // For clearing summary
 }
 
 /**
- * Advanced 3D visualization canvas that continues animating during speech
- * with improved stability and less resource usage
+ * Advanced 3D visualization canvas with enhanced features:
+ * - More complex 3D terrain with realistic shading and lighting effects
+ * - Particle systems that respond more dynamically to speech emotion
+ * - More sophisticated color transitions based on sentiment analysis
+ * - Interactive elements that respond to mouse movements
+ * - Visual overlays showing emotional patterns over time
  */
 export default function AdvancedVisualizationCanvas({
   sentiment,
@@ -35,27 +38,53 @@ export default function AdvancedVisualizationCanvas({
   motion,
   onClearSummary
 }: AdvancedVisualizationCanvasProps) {
-  // Use the 3D visualization hook for continuous animation
-  const { canvasRef, getColors } = use3DVisualization({
+  // Use the advanced 3D visualization hook
+  const { canvasRef, dimensions, emotionHistory } = useAdvanced3DVisualization({
     sentiment,
     sentimentScore,
     text,
     motion,
-    colorIntensity
+    colorIntensity,
+    interactivity: true // Enable mouse interaction
   });
   
-  // Local state for processing indicator animation
+  // Animation state for text processing
   const [processedWords, setProcessedWords] = useState<string[]>([]);
   const [displayText, setDisplayText] = useState('');
   const wordsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Color palette for the current sentiment
+  // Generate a color palette based on sentiment
+  const getColors = () => {
+    if (sentiment === 'Positive') {
+      return {
+        primary: colorIntensity ? '#00b4d8' : '#8ecae6',   // Bright blue
+        secondary: colorIntensity ? '#06d6a0' : '#95d5b2', // Bright teal
+        accent: colorIntensity ? '#ffdd00' : '#ffd166',    // Bright yellow
+        background: '#023047'                              // Deep blue bg
+      };
+    } else if (sentiment === 'Negative') {
+      return {
+        primary: colorIntensity ? '#9b2226' : '#ae2012',   // Dark red
+        secondary: colorIntensity ? '#bb3e03' : '#ca6702', // Dark orange
+        accent: colorIntensity ? '#ee9b00' : '#e9c46a',    // Gold
+        background: '#001219'                              // Very dark blue-green
+      };
+    } else {
+      return {
+        primary: colorIntensity ? '#4895ef' : '#4cc9f0',   // Medium blue
+        secondary: colorIntensity ? '#4361ee' : '#4361ee', // Medium purple
+        accent: colorIntensity ? '#3f37c9' : '#3a0ca3',    // Deep purple
+        background: '#240046'                              // Deep purple bg
+      };
+    }
+  };
+  
   const colors = getColors();
   
   // Animate the processing text
   useEffect(() => {
     if (isProcessing) {
-      // Split the text into an array of words
+      // Split the text into words
       const words = text.split(' ').filter(word => word.trim() !== '');
       setProcessedWords(words);
       
@@ -94,15 +123,15 @@ export default function AdvancedVisualizationCanvas({
   
   return (
     <div className="relative w-full h-full overflow-hidden bg-black rounded-lg">
-      {/* Main 3D canvas - always renders */}
+      {/* Advanced 3D visualization canvas */}
       <canvas 
         ref={canvasRef} 
         className="absolute inset-0 w-full h-full z-10"
       />
       
-      {/* Show the processing overlay when generating AI summary */}
+      {/* Processing overlay */}
       {isProcessing && (
-        <div className="absolute inset-0 z-20 bg-black/20 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
+        <div className="absolute inset-0 z-20 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
           <div className="text-xl font-bold mb-2" style={{ color: colors.accent }}>
             {processingMessage}
           </div>
@@ -130,7 +159,7 @@ export default function AdvancedVisualizationCanvas({
         </div>
       )}
       
-      {/* Speech indicator */}
+      {/* Recording indicator */}
       {text && !isProcessing && (
         <div className="absolute bottom-4 right-4 z-30">
           <div 
@@ -140,7 +169,7 @@ export default function AdvancedVisualizationCanvas({
               border: `1px solid ${colors.primary}40`,
             }}
           >
-            <IconMicrophone className="w-4 h-4 text-green-400 animate-pulse" />
+            <Mic className="w-4 h-4 text-green-400 animate-pulse" />
             <span className="text-white">Recording in progress</span>
           </div>
         </div>
@@ -155,13 +184,13 @@ export default function AdvancedVisualizationCanvas({
             onClick={onClearSummary}
             className="bg-black/40 border-gray-600 hover:bg-black/60 text-white"
           >
-            <IconTrash className="w-4 h-4 mr-2" />
+            <Trash className="w-4 h-4 mr-2" />
             <span>Clear Summary</span>
           </Button>
         </div>
       )}
       
-      {/* Sentiment indicator */}
+      {/* Emotion stats */}
       <div className="absolute top-4 left-4 z-30">
         <div 
           className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm"
@@ -183,6 +212,22 @@ export default function AdvancedVisualizationCanvas({
             {sentiment === 'Positive' ? 'Positive' : 
              sentiment === 'Negative' ? 'Negative' : 
              'Neutral'} ({sentimentScore.toFixed(2)})
+          </span>
+        </div>
+      </div>
+      
+      {/* Visualization help tooltip */}
+      <div className="absolute bottom-4 left-4 z-30 opacity-60 hover:opacity-100 transition-opacity">
+        <div 
+          className="flex items-center space-x-2 px-3 py-1 rounded-full text-xs"
+          style={{ 
+            backgroundColor: `${colors.background}CC`,
+            border: `1px solid ${colors.primary}40`
+          }}
+        >
+          <Lightbulb className="w-3 h-3" />
+          <span className="text-white">
+            Move mouse to interact with the visualization
           </span>
         </div>
       </div>
