@@ -254,11 +254,11 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
       }
     }
     
-    // Determine terrain resolution and characteristics - increased for 4K quality
-    const baseResolution = highQuality ? 120 : 60; // Double resolution for 4K
+    // High-quality terrain resolution settings for better organization and smooth appearance
+    const baseResolution = 80; // Consistent resolution for better organization
     const resolution = baseResolution; 
-    const terrainWidth = width * 4; // Wider terrain for more detail
-    const terrainDepth = height * 4; // Deeper terrain for more detail
+    const terrainWidth = width * 2.5; // Balanced width for organized appearance
+    const terrainDepth = height * 2.5; // Balanced depth for organized appearance
     const gridSizeX = terrainWidth / resolution;
     const gridSizeZ = terrainDepth / resolution;
     
@@ -821,13 +821,13 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
       p.vy *= speedMod;
       p.vz *= speedMod;
       
-      // Update position - increased speed multiplier for faster animation
-      p.x += p.vx * deltaTime * 90; // 3x faster movement
-      p.y += p.vy * deltaTime * 90; // 3x faster movement
-      p.z += p.vz * deltaTime * 90; // 3x faster movement
+      // Update position with smooth, organized movement
+      p.x += p.vx * deltaTime * 30; // Smooth movement
+      p.y += p.vy * deltaTime * 30; // Smooth movement
+      p.z += p.vz * deltaTime * 30; // Smooth movement
       
-      // Update rotation - increased speed for faster animation
-      p.rotation += p.rotationSpeed * deltaTime * 90; // 3x faster rotation
+      // Update rotation with smooth, consistent speed
+      p.rotation += p.rotationSpeed * deltaTime * 20; // Gentle rotation
       
       // Apply size modifier
       p.size = p.baseSize * sizeMod * (0.5 + p.life / p.maxLife * 0.5);

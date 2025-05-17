@@ -38,7 +38,7 @@ export default function AdvancedVisualizationCanvas({
   motion,
   onClearSummary
 }: AdvancedVisualizationCanvasProps) {
-  // Use the advanced 3D visualization hook with enhanced 4K settings
+  // Use the advanced 3D visualization hook with high-quality settings
   const { canvasRef, dimensions, emotionHistory } = useAdvanced3DVisualization({
     sentiment,
     sentimentScore,
@@ -47,8 +47,8 @@ export default function AdvancedVisualizationCanvas({
     colorIntensity,
     interactivity: true, // Enable mouse interaction
     keepAnimating: true, // Keep animation running during voice recording
-    highQuality: true, // Enable 4K high quality rendering
-    animationSpeed: 3.0 // Triple the animation speed
+    highQuality: true, // Enable high-quality rendering
+    animationSpeed: 1.0 // Normal animation speed for smooth movement
   });
   
   // Animation state for text processing
