@@ -8,6 +8,8 @@ interface Advanced3DVisualizationOptions {
   colorIntensity: boolean;
   interactivity?: boolean; // Optional flag for interactive features
   keepAnimating?: boolean; // Flag to continue animation during voice recording
+  highQuality?: boolean; // Flag for 4K rendering quality
+  animationSpeed?: number; // Animation speed multiplier (default: 1.0)
 }
 
 // 3D terrain point
@@ -226,11 +228,11 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
     
   }, [options.sentiment, options.sentimentScore]);
   
-  // Initialize the terrain with advanced features
+  // Initialize the terrain with advanced 4K features
   const initializeTerrain = useCallback(() => {
     if (!canvasRef.current) return;
     
-    const { sentiment, sentimentScore } = options;
+    const { sentiment, sentimentScore, highQuality } = options;
     const canvas = canvasRef.current;
     const { width, height } = canvas;
     const colors = getColorPalette();
@@ -238,8 +240,23 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
     // Clear existing terrain
     terrain.current = [];
     
+    // Set canvas dimensions to 4K if high quality is enabled
+    if (highQuality) {
+      canvas.width = Math.min(3840, window.innerWidth * 2); // 4K width (capped to screen size)
+      canvas.height = Math.min(2160, window.innerHeight * 2); // 4K height (capped to screen size)
+      // Apply high-DPI scaling
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const dpr = window.devicePixelRatio || 1;
+        ctx.scale(dpr, dpr);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+      }
+    }
+    
     // Determine terrain resolution and characteristics - increased for 4K quality
-    const resolution = 60; // Grid size doubled for higher quality
+    const baseResolution = highQuality ? 120 : 60; // Double resolution for 4K
+    const resolution = baseResolution; 
     const terrainWidth = width * 4; // Wider terrain for more detail
     const terrainDepth = height * 4; // Deeper terrain for more detail
     const gridSizeX = terrainWidth / resolution;
