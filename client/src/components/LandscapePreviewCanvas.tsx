@@ -320,8 +320,8 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
             canvasHeight = Math.max(canvasHeight, 100);
           }
           
-          // Create canvas with proper error handling
-          const canvas = p.createCanvas(canvasWidth, canvasHeight, p.WEBGL);
+          // Create canvas with P2D renderer instead of WebGL to avoid shader errors
+          const canvas = p.createCanvas(canvasWidth, canvasHeight);
           
           // Set the canvas to fill its container
           canvas.style('width', '100%');
@@ -920,8 +920,8 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
         
         console.log("Canvas dimensions:", canvasWidth + "x" + canvasHeight);
         
-        // Create canvas sized to container - force display
-        p.createCanvas(canvasWidth, canvasHeight, p.WEBGL);
+        // Create canvas sized to container - using P2D instead of WebGL to avoid shader errors
+        p.createCanvas(canvasWidth, canvasHeight);
         
         // Initialize colors from props
         primaryColor = p.color(colors.primary);
