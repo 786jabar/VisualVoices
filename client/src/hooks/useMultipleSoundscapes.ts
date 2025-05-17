@@ -246,7 +246,9 @@ export function useMultipleSoundscapes(options: SoundscapeOptions): MultipleSoun
         
         newAmbienceLoop = new Tone.Loop((time) => {
           if (Math.random() > 0.8) {
-            noiseInst.triggerAttackRelease('32n', time, 0.03);
+            // Add a slight offset to prevent timing conflicts
+            const triggerTime = time + 0.01;
+            noiseInst.triggerAttackRelease('32n', triggerTime, 0.03);
           }
         }, '8n');
         break;
