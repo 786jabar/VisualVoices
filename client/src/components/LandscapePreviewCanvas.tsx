@@ -84,7 +84,7 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       // Landscape style flags
       const isMountainous = soundscapeType === 'dramatic' || soundscapeType === 'peaceful';
       const isFlowing = soundscapeType === 'mysterious' || soundscapeType === 'cheerful';
-      const useBlend = soundscapeType === 'melancholic';
+      const blendEnabled = soundscapeType === 'melancholic';
       const isGalactic = soundscapeType === 'galactic';
       const isCosmic = soundscapeType === 'cosmic';
       
@@ -279,7 +279,7 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
             if (isMountainous) {
               noiseVal = p.noise(x * 0.1, y * 0.1, flying) * 70;
               if (noiseVal > 30) noiseVal *= 1.5;
-            } else if (useBlend) {
+            } else if (blendEnabled) {
               noiseVal = p.noise(x * 0.07, y * 0.07, flying) * 50;
             } else {
               noiseVal = p.noise(x * 0.1, y * 0.1, flying) * 60;
@@ -894,7 +894,7 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
       // Landscape style flags
       const isMountainous = soundscapeType === 'dramatic' || soundscapeType === 'peaceful';
       const isFlowing = soundscapeType === 'mysterious' || soundscapeType === 'cheerful';
-      const useBlend = soundscapeType === 'melancholic';
+      const blendEnabled = soundscapeType === 'melancholic';
       const isGalactic = soundscapeType === 'galactic';
       const isCosmic = soundscapeType === 'cosmic';
       
@@ -1097,7 +1097,7 @@ const LandscapePreviewCanvas: React.FC<LandscapePreviewCanvasProps> = ({
           drawMountainousLandscape();
         } else if (isFlowing) {
           drawFlowingLandscape();
-        } else if (useBlend) {
+        } else if (blendEnabled) {
           drawDefaultLandscape(); // Fallback
         } else {
           drawDefaultLandscape();
