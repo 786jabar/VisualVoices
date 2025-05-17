@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { downloadCanvasAsImage } from '@/lib/utils';
@@ -11,11 +11,18 @@ import SettingsModal from '@/components/SettingsModal';
 import EmotionTracker from '@/components/EmotionTracker';
 import SocialShareModal from '@/components/SocialShareModal';
 import DashboardLandscapes from '@/components/DashboardLandscapes';
+import CreativitySparkButton from '@/components/CreativitySparkButton';
+import TransformationToast from '@/components/TransformationToast';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useToneAudio } from '@/hooks/useToneAudio';
 import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { SupportedLanguage } from '@/hooks/useSpeechSynthesis';
+import { 
+  getRandomTransformation, 
+  applyTransformation,
+  type CreativeTransformation 
+} from '@/lib/creativityTransformations';
 
 export default function Home() {
   const { toast } = useToast();
@@ -46,6 +53,27 @@ export default function Home() {
   
   // State for poetic summary
   const [poeticSummary, setPoeticSummary] = useState<string | null>(null);
+  
+  // State for Creativity Spark feature
+  const [activeTransformation, setActiveTransformation] = useState<CreativeTransformation | null>(null);
+  const [showTransformationToast, setShowTransformationToast] = useState(false);
+  const [transformedColors, setTransformedColors] = useState({
+    primary: '#3b5998',
+    secondary: '#192a56',
+    accent: '#4bcffa'
+  });
+  const [originalState, setOriginalState] = useState<{
+    sentiment: number;
+    colors: { primary: string; secondary: string; accent: string; };
+    motion: boolean;
+    intensity: boolean;
+  } | null>(null);
+  
+  // Refs for sound effects
+  const sparkleAudioRef = useRef<HTMLAudioElement | null>(null);
+  const whooshAudioRef = useRef<HTMLAudioElement | null>(null);
+  const chimeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const magicalAudioRef = useRef<HTMLAudioElement | null>(null);
   
   // Speech recognition hook
   const { 
