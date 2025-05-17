@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { nanoid } from 'nanoid';
 
 // Types for collaboration
-type VisualizationData = {
+export type VisualizationData = {
   sentiment: 'Negative' | 'Neutral' | 'Positive';
   sentimentScore: number;
   text: string;
@@ -11,18 +11,18 @@ type VisualizationData = {
   poeticSummary?: string | null;
 };
 
-type CollaborationUser = {
+export type CollaborationUser = {
   id: string;
   username: string;
 };
 
-type CollaborationRoom = {
+export type CollaborationRoom = {
   roomId: string;
   owner: string;
   users: CollaborationUser[];
 };
 
-type ChatMessage = {
+export type ChatMessage = {
   sender: CollaborationUser;
   message: string;
   timestamp: string;
@@ -50,287 +50,225 @@ interface CollaborativeVisualizationHook {
 }
 
 /**
- * Hook for managing real-time collaborative visualization sharing
+ * Hook for real-time collaborative visualization sharing
+ * Allows multiple users to view and interact with the same visualization
  */
 export default function useCollaborativeVisualization(): CollaborativeVisualizationHook {
-  // Generate a unique client ID
-  const clientIdRef = useRef<string>(nanoid());
-  
-  // WebSocket connection
-  const socketRef = useRef<WebSocket | null>(null);
-  
-  // State
-  const [isConnected, setIsConnected] = useState<boolean>(false);
+  // Connection state
+  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Client and room state
+  const [clientId] = useState(nanoid(8));
+  const [username, setUsername] = useState<string>('');
   const [room, setRoom] = useState<CollaborationRoom | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
+  
+  // Data state
   const [visualizationData, setVisualizationData] = useState<VisualizationData | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
-  // Initialize WebSocket connection
-  const initializeWebSocket = useCallback(() => {
-    // Close existing connection if any
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.close();
-    }
-    
-    // Create new connection
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
-    
-    // Connection opened
-    socket.addEventListener('open', () => {
-      console.log('WebSocket connection established');
-      setIsConnected(true);
-      setError(null);
-    });
-    
-    // Connection closed
-    socket.addEventListener('close', () => {
-      console.log('WebSocket connection closed');
-      setIsConnected(false);
-      
-      // Attempt to reconnect after a delay
-      setTimeout(() => {
-        if (document.visibilityState !== 'hidden') {
-          initializeWebSocket();
-        }
-      }, 3000);
-    });
-    
-    // Connection error
-    socket.addEventListener('error', (event) => {
-      console.error('WebSocket error:', event);
-      setError('Failed to connect to collaboration server');
-    });
-    
-    // Handle incoming messages
-    socket.addEventListener('message', (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        handleWebSocketMessage(message);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+  // WebSocket connection
+  const socket = useRef<WebSocket | null>(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 5;
+  
+  // Function to establish WebSocket connection
+  const connectWebSocket = useCallback(() => {
+    try {
+      // Close existing connection if any
+      if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+        socket.current.close();
       }
-    });
+      
+      // Determine WebSocket URL based on environment
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      
+      console.log('Connecting to WebSocket at:', wsUrl);
+      
+      // Create new WebSocket connection
+      socket.current = new WebSocket(wsUrl);
+      
+      // Connection opened handler
+      socket.current.onopen = () => {
+        console.log('WebSocket connection established');
+        setIsConnected(true);
+        setError(null);
+        reconnectAttempts.current = 0;
+      };
+      
+      // Connection error handler
+      socket.current.onerror = (event) => {
+        console.error('WebSocket error:', event);
+        setError('Failed to connect to collaboration server');
+      };
+      
+      // Connection closed handler
+      socket.current.onclose = (event) => {
+        console.log('WebSocket connection closed:', event.code, event.reason);
+        setIsConnected(false);
+        
+        // Attempt to reconnect unless max attempts reached
+        if (reconnectAttempts.current < maxReconnectAttempts) {
+          reconnectAttempts.current++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts.current})`);
+          
+          setTimeout(() => {
+            connectWebSocket();
+          }, delay);
+        } else {
+          setError('Could not establish a stable connection. Please try again later.');
+        }
+      };
+      
+      // Message handler
+      socket.current.onmessage = (event) => {
+        try {
+          const data: WebSocketMessage = JSON.parse(event.data);
+          console.log('Received WebSocket message:', data.type);
+          
+          switch (data.type) {
+            case 'room_created':
+              handleRoomCreated(data);
+              break;
+            case 'room_joined':
+              handleRoomJoined(data);
+              break;
+            case 'user_joined':
+              handleUserJoined(data);
+              break;
+            case 'user_left':
+              handleUserLeft(data);
+              break;
+            case 'visualization_update':
+              handleVisualizationUpdate(data);
+              break;
+            case 'chat_message':
+              handleChatMessage(data);
+              break;
+            case 'error':
+              handleError(data);
+              break;
+            default:
+              console.warn('Unknown message type:', data.type);
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up WebSocket connection:', error);
+      setError('Failed to set up collaboration. Please try again.');
+    }
   }, []);
   
-  // Handle incoming WebSocket messages
-  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
-    console.log('Received WebSocket message:', message);
+  // Connect on initial load
+  useEffect(() => {
+    connectWebSocket();
     
-    switch (message.type) {
-      case 'connected':
-        // Connection confirmed
-        setError(null);
-        break;
-        
-      case 'error':
-        // Error from server
-        setError(message.message || 'An error occurred');
-        break;
-        
-      case 'room-created':
-        // Room created successfully
-        setRoom({
-          roomId: message.roomId,
-          owner: message.owner,
-          users: [{
-            id: clientIdRef.current,
-            username: 'You (Owner)'
-          }]
-        });
-        break;
-        
-      case 'visualization-data':
-        // Initial visualization data when joining a room
-        setVisualizationData(message.data);
-        setRoom({
-          roomId: message.roomId || room?.roomId || '',
-          owner: message.owner,
-          users: message.users || []
-        });
-        break;
-        
-      case 'visualization-update':
-        // Update to visualization from another client
-        setVisualizationData(message.data);
-        break;
-        
-      case 'user-joined':
-        // New user joined the room
-        setRoom(prevRoom => {
-          if (!prevRoom) return prevRoom;
-          
-          // Add user if not already in the list
-          const userExists = prevRoom.users.some(user => user.id === message.clientId);
-          if (userExists) return prevRoom;
-          
-          return {
-            ...prevRoom,
-            users: [
-              ...prevRoom.users,
-              {
-                id: message.clientId,
-                username: message.username
-              }
-            ]
-          };
-        });
-        
-        // Add system message to chat
-        setChatMessages(prev => [
-          ...prev,
-          {
-            sender: { id: 'system', username: 'System' },
-            message: `${message.username} joined the room`,
-            timestamp: message.timestamp || new Date().toISOString()
-          }
-        ]);
-        break;
-        
-      case 'user-left':
-        // User left the room
-        setRoom(prevRoom => {
-          if (!prevRoom) return prevRoom;
-          
-          return {
-            ...prevRoom,
-            users: prevRoom.users.filter(user => user.id !== message.clientId)
-          };
-        });
-        
-        // Add system message to chat
-        setChatMessages(prev => [
-          ...prev,
-          {
-            sender: { id: 'system', username: 'System' },
-            message: `${message.username} left the room`,
-            timestamp: message.timestamp || new Date().toISOString()
-          }
-        ]);
-        break;
-        
-      case 'new-owner':
-        // Owner of the room changed
-        setRoom(prevRoom => {
-          if (!prevRoom) return prevRoom;
-          
-          return {
-            ...prevRoom,
-            owner: message.owner
-          };
-        });
-        
-        // Add system message to chat
-        setChatMessages(prev => [
-          ...prev,
-          {
-            sender: { id: 'system', username: 'System' },
-            message: `${message.username} is now the room owner`,
-            timestamp: new Date().toISOString()
-          }
-        ]);
-        break;
-        
-      case 'chat':
-        // Chat message from another user
-        setChatMessages(prev => [
-          ...prev,
-          {
-            sender: message.sender,
-            message: message.message,
-            timestamp: message.timestamp || new Date().toISOString()
-          }
-        ]);
-        break;
-    }
-  }, [room]);
+    return () => {
+      // Cleanup WebSocket connection on unmount
+      if (socket.current) {
+        socket.current.close();
+      }
+    };
+  }, [connectWebSocket]);
   
   // Send message to WebSocket server
   const sendMessage = useCallback((message: WebSocketMessage) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(message));
-    } else {
+    if (!socket.current || socket.current.readyState !== WebSocket.OPEN) {
       setError('Not connected to collaboration server');
-      
-      // Try to reconnect
-      initializeWebSocket();
+      return false;
     }
-  }, [initializeWebSocket]);
+    
+    try {
+      socket.current.send(JSON.stringify({
+        ...message,
+        clientId
+      }));
+      return true;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError('Failed to send message');
+      return false;
+    }
+  }, [clientId]);
   
   // Create a new collaboration room
-  const createRoom = useCallback((username: string, initialData: VisualizationData) => {
-    sendMessage({
-      type: 'create',
-      clientId: clientIdRef.current,
-      username,
-      visualizationData: initialData
+  const createRoom = useCallback((newUsername: string, initialData: VisualizationData) => {
+    setUsername(newUsername);
+    
+    const success = sendMessage({
+      type: 'create_room',
+      username: newUsername,
+      initialData
     });
+    
+    if (success) {
+      setIsOwner(true);
+    }
   }, [sendMessage]);
   
   // Join an existing collaboration room
-  const joinRoom = useCallback((roomId: string, username: string) => {
+  const joinRoom = useCallback((roomId: string, newUsername: string) => {
+    setUsername(newUsername);
+    
     sendMessage({
-      type: 'join',
+      type: 'join_room',
       roomId,
-      clientId: clientIdRef.current,
-      username
+      username: newUsername
     });
   }, [sendMessage]);
   
   // Leave the current room
   const leaveRoom = useCallback(() => {
-    sendMessage({
-      type: 'leave'
-    });
-    
-    // Reset state
-    setRoom(null);
-    setVisualizationData(null);
-    setChatMessages([]);
-  }, [sendMessage]);
-  
-  // Update visualization data
-  const updateVisualization = useCallback((data: VisualizationData) => {
-    // Update local state
-    setVisualizationData(data);
-    
-    // Send update to server if in a room
-    if (room) {
-      sendMessage({
-        type: 'update',
-        visualizationData: data
-      });
-    }
-  }, [room, sendMessage]);
-  
-  // Send a chat message
-  const sendChatMessage = useCallback((message: string) => {
     if (!room) return;
     
     sendMessage({
-      type: 'chat',
-      message
+      type: 'leave_room',
+      roomId: room.roomId
     });
     
-    // Add to local chat
-    setChatMessages(prev => [
-      ...prev,
-      {
-        sender: {
-          id: clientIdRef.current,
-          username: 'You'
-        },
-        message,
-        timestamp: new Date().toISOString()
-      }
-    ]);
+    setRoom(null);
+    setVisualizationData(null);
+    setChatMessages([]);
+    setIsOwner(false);
   }, [room, sendMessage]);
   
-  // Generate a shareable room link
+  // Update visualization data (only owner can do this)
+  const updateVisualization = useCallback((data: VisualizationData) => {
+    if (!room) return;
+    
+    if (!isOwner) {
+      console.warn('Only the room owner can update visualization data');
+      return;
+    }
+    
+    sendMessage({
+      type: 'visualization_update',
+      roomId: room.roomId,
+      data
+    });
+    
+    // Update local data immediately for owner
+    setVisualizationData(data);
+  }, [room, isOwner, sendMessage]);
+  
+  // Send a chat message
+  const sendChatMessage = useCallback((message: string) => {
+    if (!room || !message.trim()) return;
+    
+    sendMessage({
+      type: 'chat_message',
+      roomId: room.roomId,
+      message,
+      timestamp: new Date().toISOString()
+    });
+  }, [room, sendMessage]);
+  
+  // Generate shareable room link
   const shareRoomLink = useCallback(() => {
     if (!room) return '';
     
@@ -339,35 +277,73 @@ export default function useCollaborativeVisualization(): CollaborativeVisualizat
     return url.toString();
   }, [room]);
   
-  // Initialize WebSocket on component mount
-  useEffect(() => {
-    initializeWebSocket();
-    
-    // Check for room ID in URL
-    const params = new URLSearchParams(window.location.search);
-    const roomId = params.get('room');
-    
-    // If room ID is present in URL, prompt to join room
-    if (roomId) {
-      // We'll handle this in the component that uses this hook
-      console.log('Room ID found in URL:', roomId);
-    }
-    
-    // Clean up on unmount
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-    };
-  }, [initializeWebSocket]);
+  // Handle room created message
+  const handleRoomCreated = useCallback((data: WebSocketMessage) => {
+    setRoom(data.room);
+    setVisualizationData(data.initialData);
+    setIsOwner(true);
+  }, []);
   
-  // Determine if the current user is the owner
-  const isOwner = room ? room.owner === clientIdRef.current : false;
+  // Handle room joined message
+  const handleRoomJoined = useCallback((data: WebSocketMessage) => {
+    setRoom(data.room);
+    setVisualizationData(data.visualizationData);
+    setChatMessages(data.chatHistory || []);
+    setIsOwner(data.room.owner === clientId);
+  }, [clientId]);
+  
+  // Handle user joined message
+  const handleUserJoined = useCallback((data: WebSocketMessage) => {
+    setRoom(prevRoom => {
+      if (!prevRoom) return null;
+      
+      // Add user to the room's user list
+      return {
+        ...prevRoom,
+        users: [...prevRoom.users, data.user]
+      };
+    });
+  }, []);
+  
+  // Handle user left message
+  const handleUserLeft = useCallback((data: WebSocketMessage) => {
+    setRoom(prevRoom => {
+      if (!prevRoom) return null;
+      
+      // Remove user from the room's user list
+      return {
+        ...prevRoom,
+        users: prevRoom.users.filter(user => user.id !== data.userId)
+      };
+    });
+  }, []);
+  
+  // Handle visualization update message
+  const handleVisualizationUpdate = useCallback((data: WebSocketMessage) => {
+    setVisualizationData(data.data);
+  }, []);
+  
+  // Handle chat message
+  const handleChatMessage = useCallback((data: WebSocketMessage) => {
+    setChatMessages(prevMessages => [
+      ...prevMessages,
+      {
+        sender: data.sender,
+        message: data.message,
+        timestamp: data.timestamp
+      }
+    ]);
+  }, []);
+  
+  // Handle error message
+  const handleError = useCallback((data: WebSocketMessage) => {
+    setError(data.message || 'An error occurred');
+  }, []);
   
   return {
     isConnected,
     isOwner,
-    clientId: clientIdRef.current,
+    clientId,
     room,
     visualizationData,
     chatMessages,

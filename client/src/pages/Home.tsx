@@ -252,8 +252,13 @@ export default function Home() {
       setOriginalState(currentState);
     }
     
-    // Get a random transformation
-    const transformation = getRandomTransformation();
+    // Create a transformation object
+    const transformation = {
+      type: 'kaleidoscope' as const,
+      name: 'Kaleidoscopic Vision',
+      description: 'A mesmerizing reflection of geometric patterns that unfold in perfect symmetry',
+      intensity: 0.7
+    };
     setActiveTransformation(transformation);
     setShowTransformationToast(true);
     

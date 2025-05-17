@@ -10,6 +10,7 @@ import GalleryItem from "@/pages/GalleryItem";
 import LandingPage from "@/pages/LandingPage";
 import Explore from "@/pages/Explore";
 import Landscapes from "@/pages/Landscapes";
+import UserAnimations from "@/pages/UserAnimations";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/gallery/:id" component={GalleryItem} />
       <Route path="/explore" component={Explore} />
       <Route path="/landscapes" component={Landscapes} />
+      <Route path="/my-animations" component={UserAnimations} />
       <Route component={NotFound} />
     </Switch>
   );
