@@ -7,6 +7,7 @@ interface Advanced3DVisualizationOptions {
   motion: boolean;
   colorIntensity: boolean;
   interactivity?: boolean; // Optional flag for interactive features
+  keepAnimating?: boolean; // Flag to continue animation during voice recording
 }
 
 // 3D terrain point

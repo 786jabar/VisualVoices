@@ -416,18 +416,42 @@ const ControlPanel: FC<ControlPanelProps> = ({
               <h3 className="text-sm font-semibold text-white flex items-center">
                 <span className="mr-2">✨ Poetic Interpretation</span>
               </h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={handleCopyText} className="h-7 w-7 p-0">
-                      <Copy className="h-3.5 w-3.5 text-gray-400" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Copy to clipboard</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <div className="flex space-x-1">
+                {/* Copy button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={handleCopyText} className="h-7 w-7 p-0">
+                        <Copy className="h-3.5 w-3.5 text-gray-400" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy to clipboard</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                {/* Clear Summary button */}
+                {onClearSummary && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onClearSummary}
+                          className="h-7 w-7 p-0"
+                        >
+                          <StopCircle className="h-3.5 w-3.5 text-gray-400" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clear summary</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </div>
             <p className="text-sm italic text-gray-300">{poeticSummary}</p>
           </div>

@@ -5,6 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Get a random element from an array
+ */
+export function getRandomElement<T>(array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
 // Function to download data as a file
 export function downloadFile(data: string, filename: string, type: string) {
   const blob = new Blob([data], { type });

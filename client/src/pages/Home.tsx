@@ -22,7 +22,6 @@ import { use3DAudio } from '@/hooks/use3DAudio';
 import { useAudioCoordinator } from '@/hooks/useAudioCoordinator';
 import { SupportedLanguage } from '@/hooks/useSpeechSynthesis';
 import { 
-  getRandomTransformation, 
   applyRandomTransformation,
   type CreativeTransformation 
 } from '@/lib/creativityTransformations';
