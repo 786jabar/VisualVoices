@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
+import { SupportedLanguage, SUPPORTED_LANGUAGES } from '../hooks/useSpeechSynthesis';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -27,14 +28,14 @@ interface SettingsModalProps {
     audioVolume: number;
     colorIntensity: boolean;
     motionEffects: boolean;
-    language: string;
+    language: SupportedLanguage;
   };
   onSettingsChange: (settings: {
     audioEnabled: boolean;
     audioVolume: number;
     colorIntensity: boolean;
     motionEffects: boolean;
-    language: string;
+    language: SupportedLanguage;
   }) => void;
 }
 
@@ -138,40 +139,25 @@ const SettingsModal: FC<SettingsModalProps> = ({
                 </Label>
                 <Select 
                   value={localSettings.language}
-                  onValueChange={(value) => {
-                    setLocalSettings({...localSettings, language: value});
-                    // Store language preference in localStorage for speech recognition and synthesis
-                    localStorage.setItem('preferredLanguage', value);
+                  onValueChange={(value: string) => {
+                    // Validate that the selected language is in our supported list
+                    if (Object.keys(SUPPORTED_LANGUAGES).includes(value)) {
+                      const supportedLang = value as SupportedLanguage;
+                      setLocalSettings({...localSettings, language: supportedLang});
+                      // Store language preference in localStorage for speech recognition and synthesis
+                      localStorage.setItem('preferredLanguage', supportedLang);
+                    }
                   }}
                 >
                   <SelectTrigger className="w-full bg-dark-200 border-dark-300">
                     <SelectValue placeholder="Select a language" />
                   </SelectTrigger>
                   <SelectContent className="bg-dark-100 border-dark-300 max-h-[300px]">
-                    <SelectItem value="en-US">English (US)</SelectItem>
-                    <SelectItem value="en-GB">English (UK)</SelectItem>
-                    <SelectItem value="en-AU">English (Australia)</SelectItem>
-                    <SelectItem value="en-CA">English (Canada)</SelectItem>
-                    <SelectItem value="es-ES">Spanish (Spain)</SelectItem>
-                    <SelectItem value="es-MX">Spanish (Mexico)</SelectItem>
-                    <SelectItem value="fr-FR">French</SelectItem>
-                    <SelectItem value="de-DE">German</SelectItem>
-                    <SelectItem value="it-IT">Italian</SelectItem>
-                    <SelectItem value="pt-BR">Portuguese (Brazil)</SelectItem>
-                    <SelectItem value="pt-PT">Portuguese (Portugal)</SelectItem>
-                    <SelectItem value="zh-CN">Chinese (Mandarin)</SelectItem>
-                    <SelectItem value="ja-JP">Japanese</SelectItem>
-                    <SelectItem value="ko-KR">Korean</SelectItem>
-                    <SelectItem value="hi-IN">Hindi</SelectItem>
-                    <SelectItem value="ar-SA">Arabic</SelectItem>
-                    <SelectItem value="ru-RU">Russian</SelectItem>
-                    <SelectItem value="nl-NL">Dutch</SelectItem>
-                    <SelectItem value="sv-SE">Swedish</SelectItem>
-                    <SelectItem value="no-NO">Norwegian</SelectItem>
-                    <SelectItem value="da-DK">Danish</SelectItem>
-                    <SelectItem value="fi-FI">Finnish</SelectItem>
-                    <SelectItem value="pl-PL">Polish</SelectItem>
-                    <SelectItem value="tr-TR">Turkish</SelectItem>
+                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, { name, nativeName }]) => (
+                      <SelectItem key={code} value={code}>
+                        {name} {name !== nativeName ? `(${nativeName})` : ''}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <p className="text-dark-500 text-xs mt-1.5">
