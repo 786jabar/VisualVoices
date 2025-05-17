@@ -22,6 +22,7 @@ function Router() {
       <Route path="/explore" component={Explore} />
       <Route path="/landscapes" component={Landscapes} />
       <Route path="/my-animations" component={UserAnimations} />
+      <Route path="/landscape/:id" component={LandscapePlayerPage} />
       <Route component={NotFound} />
     </Switch>
   );

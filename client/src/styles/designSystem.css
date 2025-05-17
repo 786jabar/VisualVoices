@@ -668,6 +668,133 @@ body, .body {
   grid-template-columns: repeat(4, 1fr);
 }
 
+/* Landscape Player Styles */
+.landscape-player {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--color-background);
+}
+
+.landscape-player__visualization {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.landscape-player__background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  transition: filter 0.5s ease;
+}
+
+.landscape-player__canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.landscape-player__overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: white;
+  z-index: 2;
+}
+
+.landscape-player__title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.landscape-player__type {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.landscape-player__controls {
+  padding: 1.5rem;
+  background-color: var(--color-primary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.landscape-player__main-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-icon--large {
+  width: 64px;
+  height: 64px;
+}
+
+.btn-icon__spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.landscape-player__volume {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.volume-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.volume-slider:disabled {
+  opacity: 0.5;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Responsive adjustments */
 @media (min-width: 640px) {
   .sm\:grid-cols-2 {
