@@ -354,6 +354,16 @@ export default function Home() {
                 className="w-60 md:w-72 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-white/10"
               />
             </div>
+            
+            {/* Creativity Spark Button - only visible when visualization is active */}
+            {(isListening || transcript) && (
+              <div className="absolute top-4 right-4 z-20">
+                <CreativitySparkButton 
+                  onSpark={handleCreativitySpark} 
+                  disabled={summaryMutation.isPending}
+                />
+              </div>
+            )}
           </div>
           
           {/* Right Panel - Controls */}
@@ -399,6 +409,35 @@ export default function Home() {
         title="My Vocal Earth Creation"
         description={transcript || undefined}
         poeticSummary={poeticSummary}
+      />
+
+      {/* Transformation Toast */}
+      <TransformationToast 
+        transformation={activeTransformation}
+        isVisible={showTransformationToast}
+        onClose={() => setShowTransformationToast(false)}
+      />
+      
+      {/* Sound Effect Audio Elements */}
+      <audio 
+        ref={sparkleAudioRef}
+        src="/sounds/sparkle.mp3" 
+        preload="auto"
+      />
+      <audio 
+        ref={whooshAudioRef}
+        src="/sounds/whoosh.mp3" 
+        preload="auto"
+      />
+      <audio 
+        ref={chimeAudioRef}
+        src="/sounds/chime.mp3" 
+        preload="auto"
+      />
+      <audio 
+        ref={magicalAudioRef}
+        src="/sounds/magical.mp3" 
+        preload="auto"
       />
     </div>
   );
