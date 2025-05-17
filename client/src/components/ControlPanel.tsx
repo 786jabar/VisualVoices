@@ -574,8 +574,8 @@ const ControlPanel: FC<ControlPanelProps> = ({
       </div>
       
       {/* Action Buttons */}
-      <div className="p-4 border-t border-gray-800 bg-gray-900/70">
-        <div className="grid grid-cols-4 gap-2">
+      <div className="p-3 sm:p-4 border-t border-gray-800 bg-gray-900/70">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {/* Theme Toggle Button */}
           {onThemeChange && (
             <TooltipProvider>

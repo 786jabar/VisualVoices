@@ -427,7 +427,7 @@ export default function Home() {
         {/* Dashboard Content with glass morphism */}
         <div className="relative z-10 flex flex-col lg:flex-row w-full h-full">
           {/* Left Panel - Visualization Area */}
-          <div className="lg:w-3/4 relative flex flex-col h-full">
+          <div className="h-[60vh] lg:h-full lg:w-3/4 relative flex flex-col">
             {/* Active Visualization Canvas - shows when speaking/processing */}
             <div className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${isListening || transcript ? 'opacity-100' : 'opacity-0'}`}>
               <AdvancedVisualizationCanvas 
@@ -445,16 +445,16 @@ export default function Home() {
             <div 
               className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${!isListening && !transcript ? 'opacity-100' : 'opacity-0'}`}
             >
-              <div className="text-center p-8 backdrop-blur-md bg-black/40 rounded-xl max-w-md border border-white/10 shadow-xl">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
+              <div className="text-center p-6 sm:p-8 backdrop-blur-md bg-black/40 rounded-xl max-w-[90%] sm:max-w-md mx-auto border border-white/10 shadow-xl">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
                   Vocal Earth
                 </h1>
-                <p className="text-lg text-gray-200 mb-6">
+                <p className="text-sm sm:text-lg text-gray-200 mb-4 sm:mb-6">
                   Transform your voice into stunning visual landscapes powered by AI
                 </p>
                 <button 
                   onClick={handleStartSpeaking}
-                  className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
                 >
                   Start Speaking
                 </button>
@@ -467,13 +467,13 @@ export default function Home() {
                 sentimentScore={sentimentScore} 
                 transcript={transcript}
                 isListening={isListening}
-                className="w-60 md:w-72 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-white/10"
+                className="w-[calc(100%-2rem)] sm:w-60 md:w-72 mx-2 sm:mx-0 bg-black/50 backdrop-blur-sm p-2 sm:p-3 rounded-lg border border-white/10 text-sm sm:text-base"
               />
             </div>
             
             {/* Creativity Spark Button - only visible when visualization is active */}
             {(isListening || transcript) && (
-              <div className="absolute top-4 right-4 z-20">
+              <div className="absolute top-4 right-4 z-20 flex gap-2">
                 <CreativitySparkButton 
                   onSpark={handleCreativitySpark} 
                   disabled={summaryMutation.isPending}
@@ -483,7 +483,7 @@ export default function Home() {
           </div>
           
           {/* Right Panel - Controls */}
-          <div className="lg:w-1/3 backdrop-blur-md bg-black/50 border-l border-gray-800/50 p-4 overflow-auto">
+          <div className="h-[40vh] lg:h-full lg:w-1/3 backdrop-blur-md bg-black/50 border-t lg:border-t-0 lg:border-l border-gray-800/50 p-3 sm:p-4 overflow-auto">
             <ControlPanel 
               isListening={isListening}
               onStartSpeaking={handleStartSpeaking}
