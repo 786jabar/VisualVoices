@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import SimpleDashboardCanvas from './SimpleDashboardCanvas';
 import { SoundscapeType } from '@/hooks/stableSoundscapes';
 
-// Pre-defined landscape settings for the dashboard carousel
+// Pre-defined landscape settings for the dashboard carousel with 20 beautiful 3D scenes
 const DASHBOARD_LANDSCAPES = [
+  // Original 5 landscapes
   {
     id: 1,
     name: "Ethereal Aurora Mountains",
@@ -52,6 +53,157 @@ const DASHBOARD_LANDSCAPES = [
       primary: "#3c096c",
       secondary: "#7b2cbf",
       accent: "#e0aaff"
+    }
+  },
+  // Additional 15 beautiful 3D landscapes
+  {
+    id: 6,
+    name: "Milky Way Galaxy",
+    soundscapeType: "galactic" as SoundscapeType,
+    colors: {
+      primary: "#0f0f23",
+      secondary: "#202060",
+      accent: "#4169e1"
+    }
+  },
+  {
+    id: 7,
+    name: "Northern Lights Forest",
+    soundscapeType: "peaceful" as SoundscapeType,
+    colors: {
+      primary: "#0f2027",
+      secondary: "#203a43",
+      accent: "#21d190"
+    }
+  },
+  {
+    id: 8,
+    name: "Snowfall Mountains",
+    soundscapeType: "peaceful" as SoundscapeType,
+    colors: {
+      primary: "#2c3e50",
+      secondary: "#bdc3c7",
+      accent: "#ffffff"
+    }
+  },
+  {
+    id: 9,
+    name: "Alpine Rainbow Valley",
+    soundscapeType: "cheerful" as SoundscapeType,
+    colors: {
+      primary: "#355c7d",
+      secondary: "#6c5b7b",
+      accent: "#c06c84"
+    }
+  },
+  {
+    id: 10,
+    name: "Misty River Canyon",
+    soundscapeType: "melancholic" as SoundscapeType,
+    colors: {
+      primary: "#076585",
+      secondary: "#3498db",
+      accent: "#8bdfff"
+    }
+  },
+  {
+    id: 11,
+    name: "Mars Landscape",
+    soundscapeType: "dramatic" as SoundscapeType,
+    colors: {
+      primary: "#4a1c1c",
+      secondary: "#8a3232",
+      accent: "#c45c41"
+    }
+  },
+  {
+    id: 12,
+    name: "Jupiter Cloud Bands",
+    soundscapeType: "cosmic" as SoundscapeType,
+    colors: {
+      primary: "#824912",
+      secondary: "#b47d23",
+      accent: "#e3b587"
+    }
+  },
+  {
+    id: 13,
+    name: "Saturn's Rings",
+    soundscapeType: "galactic" as SoundscapeType,
+    colors: {
+      primary: "#463832",
+      secondary: "#725c53",
+      accent: "#dec5a8"
+    }
+  },
+  {
+    id: 14,
+    name: "Tropical Beach Sunset",
+    soundscapeType: "peaceful" as SoundscapeType,
+    colors: {
+      primary: "#0a2e5c",
+      secondary: "#f96e5b",
+      accent: "#ffd56b"
+    }
+  },
+  {
+    id: 15,
+    name: "Volcanic Eruption",
+    soundscapeType: "dramatic" as SoundscapeType,
+    colors: {
+      primary: "#000000",
+      secondary: "#651212",
+      accent: "#f86838"
+    }
+  },
+  {
+    id: 16,
+    name: "Coral Reef Depths",
+    soundscapeType: "mysterious" as SoundscapeType,
+    colors: {
+      primary: "#0d5c71",
+      secondary: "#0891b2",
+      accent: "#54e8f8"
+    }
+  },
+  {
+    id: 17,
+    name: "Earth View From Space",
+    soundscapeType: "cosmic" as SoundscapeType,
+    colors: {
+      primary: "#000c1c",
+      secondary: "#003366",
+      accent: "#3399ff"
+    }
+  },
+  {
+    id: 18,
+    name: "Mountain Waterfall",
+    soundscapeType: "peaceful" as SoundscapeType,
+    colors: {
+      primary: "#1a4541",
+      secondary: "#386c64",
+      accent: "#7fc8ba"
+    }
+  },
+  {
+    id: 19,
+    name: "Binary Star System",
+    soundscapeType: "galactic" as SoundscapeType,
+    colors: {
+      primary: "#1e0a25",
+      secondary: "#471d54",
+      accent: "#ff4500"
+    }
+  },
+  {
+    id: 20,
+    name: "Autumn Forest Rain",
+    soundscapeType: "melancholic" as SoundscapeType,
+    colors: {
+      primary: "#5c3c10",
+      secondary: "#8f5c24",
+      accent: "#d67d3e"
     }
   }
 ];

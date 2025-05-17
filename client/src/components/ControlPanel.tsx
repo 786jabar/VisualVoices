@@ -63,6 +63,7 @@ interface ControlPanelProps {
   colorIntensity: boolean;
   motion: boolean;
   onCollaborationToggle?: () => void;
+  onClearSummary?: () => void; // Added clear summary handler
 }
 
 // Add sentimentScore, colorIntensity, and motion to props
@@ -81,7 +82,8 @@ const ControlPanel: FC<ControlPanelProps> = ({
   onToggleAudio,
   colorIntensity,
   motion,
-  onCollaborationToggle
+  onCollaborationToggle,
+  onClearSummary
 }) => {
   const { toast } = useToast();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
