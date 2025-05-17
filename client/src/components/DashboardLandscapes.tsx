@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import LandscapePreviewCanvas from './LandscapePreviewCanvas';
+import SimpleCanvas from './SimpleCanvas';
 import { SoundscapeType } from '@/hooks/stableSoundscapes';
 
 // Pre-defined landscape settings for the dashboard carousel
@@ -122,7 +122,7 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
         }}
         id="current-landscape-container"
       >
-        <LandscapePreviewCanvas
+        <SimpleCanvas
           colors={currentLandscape.colors}
           soundscapeType={currentLandscape.soundscapeType}
           isActive={isActive && !isTransitioning}
@@ -142,7 +142,7 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
           }}
           id="next-landscape-container"
         >
-          <LandscapePreviewCanvas
+          <SimpleCanvas
             colors={nextLandscape.colors}
             soundscapeType={nextLandscape.soundscapeType}
             isActive={isActive && isTransitioning}
