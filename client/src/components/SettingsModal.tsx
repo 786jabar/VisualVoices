@@ -130,7 +130,7 @@ const SettingsModal: FC<SettingsModalProps> = ({
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-dark-300/50 to-dark-200/30 p-4 rounded-lg border border-dark-300/60">
+          <div className="bg-gradient-to-r from-primary/10 to-dark-200/30 p-5 rounded-lg border border-primary/30 shadow-md">
             <h4 className="font-medium mb-3 text-primary-light flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m5 8 6 6 6-6"/>
@@ -141,8 +141,11 @@ const SettingsModal: FC<SettingsModalProps> = ({
             </h4>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="language-select" className="text-sm block mb-1 font-medium">
-                  Voice Recognition & AI Speech Language
+                <Label htmlFor="language-select" className="text-sm block mb-1 font-medium flex justify-between">
+                  <span>Voice Recognition & AI Speech Language</span>
+                  <span className="text-accent text-xs bg-accent/10 px-2 py-0.5 rounded-full">
+                    18 languages available
+                  </span>
                 </Label>
                 <div className="relative">
                   <Select 
@@ -157,12 +160,12 @@ const SettingsModal: FC<SettingsModalProps> = ({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full bg-dark-200 border-dark-300 pr-10">
+                    <SelectTrigger className="w-full bg-dark-200 border-dark-300 pr-10 focus:ring-primary/50">
                       <SelectValue placeholder="Select a language" />
                     </SelectTrigger>
                     <SelectContent className="bg-dark-100 border-dark-300 max-h-[300px]">
                       <div className="p-2 bg-primary/10 border-b border-dark-300 mb-1">
-                        <p className="text-xs font-medium text-primary-light">18 languages available</p>
+                        <p className="text-xs font-medium text-primary-light">Select your preferred language</p>
                       </div>
                       {Object.entries(SUPPORTED_LANGUAGES).map(([code, { name, nativeName }]) => (
                         <SelectItem key={code} value={code} className="focus:bg-primary/20 focus:text-white">
@@ -177,11 +180,19 @@ const SettingsModal: FC<SettingsModalProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="bg-dark-300/30 p-2 rounded mt-2 border border-dark-300/50">
-                  <p className="text-dark-400 text-xs">
-                    Vocal Earth supports 18 languages for both voice recognition and AI narration. 
-                    The AI will speak using a natural female voice in your selected language.
-                  </p>
+                <div className="bg-dark-300/40 p-3 rounded mt-3 border border-primary/20">
+                  <div className="text-white/90 text-xs flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-light flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 16v-4"/>
+                      <path d="M12 8h.01"/>
+                    </svg>
+                    <div>
+                      <p className="mb-1">Vocal Earth supports 18 languages for both voice recognition and AI narration.
+                      The AI will speak using a natural-sounding female voice in your selected language.</p>
+                      <p>Voice and language selection will be remembered for your next visit.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

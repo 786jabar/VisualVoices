@@ -103,11 +103,17 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
     };
   }, [currentIndex, isActive]);
   
+  useEffect(() => {
+    console.log("DashboardLandscapes mounted. isActive:", isActive);
+    console.log("Current landscape:", currentLandscape);
+  }, []);
+
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div className={`relative w-full h-full overflow-hidden ${className}`}>
       {/* Current landscape */}
       <div 
-        className={`absolute inset-0 transition-opacity duration-1000 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+        className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+        style={{ minHeight: '300px' }}
       >
         <LandscapePreviewCanvas
           colors={currentLandscape.colors}
@@ -119,7 +125,8 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
       {/* Next landscape (shown during transition) */}
       {nextLandscape && (
         <div 
-          className={`absolute inset-0 transition-opacity duration-1000 ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}
+          style={{ minHeight: '300px' }}
         >
           <LandscapePreviewCanvas
             colors={nextLandscape.colors}
@@ -134,9 +141,9 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
         {DASHBOARD_LANDSCAPES.map((landscape, index) => (
           <div 
             key={landscape.id}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
               index === currentIndex 
-                ? 'bg-white scale-110' 
+                ? 'bg-white scale-125' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
             onClick={() => setCurrentIndex(index)}
@@ -145,7 +152,7 @@ const DashboardLandscapes: React.FC<DashboardLandscapesProps> = ({
       </div>
       
       {/* Current landscape name overlay */}
-      <div className="absolute top-4 left-4 z-10 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-md text-white/80 text-sm font-medium">
+      <div className="absolute top-4 left-4 z-10 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-md text-white/80 text-sm font-medium border border-white/10">
         {currentLandscape.name}
       </div>
     </div>

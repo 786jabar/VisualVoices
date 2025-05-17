@@ -277,16 +277,16 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Background Landscapes - rotates landscapes every 15 seconds */}
-        <div className="absolute inset-0 z-0 opacity-40">
-          <DashboardLandscapes isActive={!isListening} />
+        <div className="fixed inset-0 w-full h-full z-0">
+          <DashboardLandscapes isActive={!isListening && !transcript} />
         </div>
         
         {/* Dashboard Content with glass morphism */}
         <div className="relative z-10 flex flex-col lg:flex-row w-full h-full">
           {/* Left Panel - Visualization Area */}
-          <div className="lg:w-2/3 relative flex flex-col">
+          <div className="lg:w-2/3 relative flex flex-col h-full">
             {/* Active Visualization Canvas - shows when speaking/processing */}
-            <div className={`absolute inset-0 transition-opacity duration-500 ${isListening || transcript ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${isListening || transcript ? 'opacity-100' : 'opacity-0'}`}>
               <VisualizationCanvas 
                 sentiment={sentiment}
                 sentimentScore={sentimentScore}
@@ -301,7 +301,7 @@ export default function Home() {
             <div 
               className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${!isListening && !transcript ? 'opacity-100' : 'opacity-0'}`}
             >
-              <div className="text-center p-6 backdrop-blur-sm bg-black/20 rounded-xl max-w-md">
+              <div className="text-center p-8 backdrop-blur-md bg-black/40 rounded-xl max-w-md border border-white/10 shadow-xl">
                 <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
                   Vocal Earth
                 </h1>
@@ -323,13 +323,13 @@ export default function Home() {
                 sentimentScore={sentimentScore} 
                 transcript={transcript}
                 isListening={isListening}
-                className="w-60 md:w-72 bg-black/50 backdrop-blur-sm p-3 rounded-lg"
+                className="w-60 md:w-72 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-white/10"
               />
             </div>
           </div>
           
           {/* Right Panel - Controls */}
-          <div className="lg:w-1/3 backdrop-blur-sm bg-black/30 border-l border-gray-800 p-4 overflow-auto">
+          <div className="lg:w-1/3 backdrop-blur-md bg-black/50 border-l border-gray-800/50 p-4 overflow-auto">
             <ControlPanel 
               isListening={isListening}
               onStartSpeaking={handleStartSpeaking}
