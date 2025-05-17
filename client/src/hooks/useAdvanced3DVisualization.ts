@@ -238,10 +238,10 @@ export function useAdvanced3DVisualization(options: Advanced3DVisualizationOptio
     // Clear existing terrain
     terrain.current = [];
     
-    // Determine terrain resolution and characteristics
-    const resolution = 30; // Grid size
-    const terrainWidth = width * 3;
-    const terrainDepth = height * 3;
+    // Determine terrain resolution and characteristics - increased for 4K quality
+    const resolution = 60; // Grid size doubled for higher quality
+    const terrainWidth = width * 4; // Wider terrain for more detail
+    const terrainDepth = height * 4; // Deeper terrain for more detail
     const gridSizeX = terrainWidth / resolution;
     const gridSizeZ = terrainDepth / resolution;
     
