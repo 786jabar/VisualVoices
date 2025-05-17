@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { downloadCanvasAsImage } from '@/lib/utils';

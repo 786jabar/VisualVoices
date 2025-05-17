@@ -24,7 +24,8 @@ import {
   Layers,
   MessageSquare,
   PlayCircle,
-  PauseCircle
+  PauseCircle,
+  Users
 } from 'lucide-react';
 import {
   Tooltip,
