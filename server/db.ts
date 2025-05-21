@@ -11,20 +11,28 @@ if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/postgres";
 }
 
-// Create pool with connection timeout
+// Create pool with optimized settings
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000 // 5 second timeout
+  connectionTimeoutMillis: 3000, // 3 second timeout
+  max: 5, // Reduce max connections
+  idleTimeoutMillis: 10000 // Close idle connections after 10 seconds
 });
 
-// Test connection and log status
-pool.connect()
-  .then(client => {
+// Function to handle connection
+const connectToDatabase = async () => {
+  try {
+    const client = await pool.connect();
     console.log("Successfully connected to database");
     client.release();
-  })
-  .catch(err => {
-    console.error("Failed to connect to database:", err.message);
-  });
+    return true;
+  } catch (err: any) {
+    console.error("Failed to connect to database:", err.message || 'Unknown error');
+    return false;
+  }
+};
+
+// Connect to database but don't wait for it
+connectToDatabase();
 
 export const db = drizzle({ client: pool, schema });
