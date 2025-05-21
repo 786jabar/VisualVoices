@@ -43,36 +43,43 @@ app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 
-// Error handler middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  
-  console.error("Server error:", err);
-  res.status(status).json({ message });
+// Create a simple API health check route
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
 });
 
-// Start the server first to bind to the port quickly
-const port = 5000;
-const server = createServer(app);
-server.listen(port, "0.0.0.0", () => {
-  log(`serving on port ${port}`);
-  log(`Server is ready to accept connections on port ${port}`);
-});
-
-// Register routes separately without waiting (don't use await)
-registerRoutes(app).then(updatedServer => {
-  // Routes registered successfully
-  log("API routes registered successfully");
-}).catch(err => {
-  console.error("Error registering routes:", err);
-});
-
-// Setup Vite after server is already listening
-if (app.get("env") === "development") {
-  setupVite(app, server).catch(err => {
-    console.error("Vite setup error:", err);
-  });
-} else {
-  serveStatic(app);
-}
+(async () => {
+  try {
+    // Start with a default server to bind the port immediately
+    const port = 5000;
+    let server = createServer(app);
+    
+    // Start listening as soon as possible
+    server.listen(port, "0.0.0.0", () => {
+      log(`Server started on port ${port}`);
+    });
+    
+    // Register routes
+    const routedServer = await registerRoutes(app);
+    log("API routes registered successfully");
+    
+    // Setup Vite
+    if (app.get("env") === "development") {
+      await setupVite(app, routedServer);
+    } else {
+      serveStatic(app);
+    }
+    
+    // Error handler middleware - must be after routes
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      console.error("Server error:", err);
+      res.status(status).json({ message });
+    });
+    
+    log(`Server is ready to accept connections on port ${port}`);
+  } catch (error) {
+    console.error("Server initialization error:", error);
+  }
+})();
